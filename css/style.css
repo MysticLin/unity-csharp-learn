@@ -150,6 +150,17 @@ h2.sec-title { font-size: 1.15rem; font-weight: 800; margin: 22px 0 10px; }
 }
 .kp h3 { font-size: 1.02rem; margin-bottom: 6px; }
 .kp-desc { font-size: .92rem; }
+.kp-more { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.kp-more summary {
+  cursor: pointer; color: var(--blue); font-weight: 700; font-size: .88rem;
+  list-style: none; user-select: none; display: flex; align-items: center;
+}
+.kp-more summary::-webkit-details-marker { display: none; }
+.kp-more summary::before { content: "▸"; margin-right: 6px; transition: transform .2s; }
+.kp-more[open] summary::before { transform: rotate(90deg); }
+.kp-more-p { font-size: .86rem; color: #555; margin-top: 8px; padding-left: 10px; border-left: 3px solid #e3f0fa; }
+.kp-pit { font-size: .84rem; background: #fff7e0; border-radius: 8px; padding: 8px 10px; margin-top: 8px; color: #8a6d00; }
+.kp-tip { font-size: .84rem; background: #e8f6ff; border-radius: 8px; padding: 8px 10px; margin-top: 8px; color: #0f6fae; }
 pre.code {
   background: #2b2b2b; color: #f8f8f2; border-radius: 12px; padding: 12px 14px; margin-top: 10px;
   overflow-x: auto; font-size: .8rem; line-height: 1.6;

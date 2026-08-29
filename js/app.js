@@ -394,6 +394,18 @@
           pre.append(el("code", "", kp.c));
           card.append(pre);
         }
+        const det = (window.KP_DETAILS || {})[lesson.id + "_" + i];
+        if (det && (det.more || det.pit || det.tip)) {
+          const d = document.createElement("details");
+          d.className = "kp-more";
+          const sum = document.createElement("summary");
+          sum.append(icon("📖"), el("span", "", " 深入了解（原理 · 避坑 · 实战）"));
+          d.append(sum);
+          (det.more || []).forEach(m => d.append(el("p", "kp-more-p", m)));
+          if (det.pit) d.append(el("p", "kp-pit", "⚠️ 常见坑：" + det.pit));
+          if (det.tip) d.append(el("p", "kp-tip", "💡 实战建议：" + det.tip));
+          card.append(d);
+        }
         page.append(card);
       });
 
