@@ -8,13 +8,42 @@
 html { font-size: 16px; }
 body {
   font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
-  background: var(--bg); color: var(--ink); line-height: 1.55;
+  background: linear-gradient(180deg, #eaf6ec 0%, #f4f8f4 300px, #f7f7f7 560px);
+  color: var(--ink); line-height: 1.55;
 }
 #app { max-width: 520px; margin: 0 auto; padding: 16px 16px calc(84px + env(safe-area-inset-bottom)); }
 .emoji { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; }
 
 /* ---------- 顶部 ---------- */
-.hero { padding: 8px 4px 4px; }
+.hero { padding: 0; border-radius: 20px; }
+.hero.hero-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #58cc02 0%, #3fae21 60%, #17a2b8 160%);
+  padding: 16px 16px 18px; color: #fff;
+  box-shadow: 0 6px 18px rgba(88, 204, 2, .28);
+}
+.hero.hero-row h1 { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.hero.hero-row .sub { color: rgba(255,255,255,.92); }
+.sound-btn { font-size: 1.2rem; padding: 7px 9px; border-radius: 12px; background: rgba(255,255,255,.2); border: 0; cursor: pointer; }
+.hero .icon-btn { flex: none; }
+
+/* 每日励志 */
+.quote-card {
+  background: linear-gradient(135deg, #fffef8, #fff6da);
+  border: 2px solid #ffe9a8; border-radius: 18px;
+  padding: 13px 16px; position: relative; overflow: hidden;
+}
+.quote-card.pop { animation: quote-pop .35s ease; }
+@keyframes quote-pop { 0% { transform: scale(.97); opacity: .5; } 100% { transform: scale(1); opacity: 1; } }
+.quote-mark { position: absolute; right: 8px; top: -14px; font-size: 4rem; color: #ffe9a8; font-family: Georgia, serif; pointer-events: none; }
+.quote-text { font-size: .96rem; font-weight: 700; color: #6b5900; padding-right: 34px; line-height: 1.65; position: relative; }
+.quote-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.quote-by { font-size: .78rem; color: #b0a05a; font-weight: 600; }
+.quote-refresh {
+  border: 0; background: #ffedb8; color: #8a6d00; font-size: .78rem; font-weight: 800;
+  padding: 6px 12px; border-radius: 99px; cursor: pointer; font-family: inherit;
+}
+.quote-refresh:active { transform: scale(.95); }
 h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: .5px; }
 .sub { color: var(--muted); font-size: .92rem; margin-top: 2px; }
 h2.sec-title { font-size: 1.15rem; font-weight: 800; margin: 22px 0 10px; }
@@ -264,8 +293,7 @@ pre.code {
 .video-file { width: 100%; border-radius: 12px; background: #000; max-height: 70vw; }
 
 /* ---------- 游戏化：日历/任务/经验图/红心/撒花 ---------- */
-.hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.sound-btn { font-size: 1.3rem; padding: 4px; }
+.hero-row { align-items: center; }
 .strip-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-weight: 800; }
 .strip-dots { display: flex; justify-content: space-between; }
 .strip-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
@@ -299,7 +327,7 @@ pre.code {
 
 /* 桌面微调 */
 @media (min-width: 560px) {
-  body { background: #ececec; }
+  body { background: linear-gradient(180deg, #e3f2e6 0%, #f4f8f4 340px, #ececec 640px); }
   #app, #nav { box-shadow: 0 0 40px rgba(0,0,0,.06); }
-  #app { background: var(--bg); min-height: 100vh; }
+  #app { background: transparent; min-height: 100vh; }
 }

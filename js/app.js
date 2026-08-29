@@ -5,6 +5,70 @@
   const WEEK = ["", "周一", "周二", "周三", "周四", "周五", "周六", "周日"];
   const CATS = { cs: "🎯 C#", u: "🎮 Unity", other: "📖 其他" };
 
+  // 每日励志语录（按天轮换）
+  const QUOTES = [
+    { t: "种一棵树最好的时间是十年前，其次是现在。", a: "谚语" },
+    { t: "不积跬步，无以至千里；不积小流，无以成江海。", a: "荀子" },
+    { t: "Talk is cheap. Show me the code.", a: "Linus Torvalds" },
+    { t: "每一个大神玩家，都曾是新手村的小白。", a: "玩家语录" },
+    { t: "业精于勤，荒于嬉；行成于思，毁于随。", a: "韩愈" },
+    { t: "宝剑锋从磨砺出，梅花香自苦寒来。", a: "《警世贤文》" },
+    { t: "先让它跑起来，再让它跑得对，最后让它跑得快。", a: "Kent Beck" },
+    { t: "世上无难事，只怕有心人。", a: "谚语" },
+    { t: "任何傻瓜都能写出机器能懂的代码，好程序员写出人能懂的代码。", a: "Martin Fowler" },
+    { t: "千里之行，始于足下。", a: "老子" },
+    { t: "你打怪升级的样子，就是学习该有的样子。", a: "训练营" },
+    { t: "绳锯木断，水滴石穿。", a: "《汉书》" },
+    { t: "简单是可靠的前提。", a: "Dijkstra" },
+    { t: "学而不思则罔，思而不学则殆。", a: "孔子" },
+    { t: "今天的 Bug，是明天经验的城墙。", a: "程序员语录" },
+    { t: "冰冻三尺，非一日之寒。", a: "谚语" },
+    { t: "过早的优化是万恶之源。", a: "Donald Knuth" },
+    { t: "重复是学习之母。", a: "狄慈根" },
+    { t: "通关的秘密只有一个：再来一次。", a: "训练营" },
+    { t: "书山有路勤为径，学海无涯苦作舟。", a: "韩愈" },
+    { t: "程序是写给人看的，顺便让机器执行。", a: "《SICP》" },
+    { t: "只要功夫深，铁杵磨成针。", a: "谚语" },
+    { t: "没有量变，哪来的质变？练级也是如此。", a: "训练营" },
+    { t: "学如逆水行舟，不进则退。", a: "《增广贤文》" },
+    { t: "第一次做不出来很正常，大神只是比你好得多而已。", a: "训练营" },
+    { t: "温故而知新，可以为师矣。", a: "孔子" },
+    { t: "经验值 +1 的日子，就是好日子。", a: "训练营" },
+    { t: "黑发不知勤学早，白首方悔读书迟。", a: "颜真卿" },
+    { t: "代码如诗，勤写如练。", a: "程序员语录" },
+    { t: "欲穷千里目，更上一层楼。", a: "王之涣" },
+    { t: "失败不是反例，是注释掉的进度条。", a: "训练营" },
+    { t: "工欲善其事，必先利其器。", a: "孔子" }
+  ];
+
+  function dailyQuote() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const day = Math.floor((now - start) / 86400000);
+    return QUOTES[day % QUOTES.length];
+  }
+
+  function quoteCard() {
+    let idx = QUOTES.indexOf(dailyQuote());
+    const card = el("div", "card quote-card");
+    card.append(el("div", "quote-mark", "❝"));
+    const qt = el("p", "quote-text", QUOTES[idx].t);
+    const by = el("p", "quote-by", "—— " + QUOTES[idx].a);
+    const refresh = el("button", "quote-refresh", "🔄 换一句");
+    refresh.onclick = () => {
+      idx = (idx + 1 + Math.floor(Math.random() * (QUOTES.length - 1))) % QUOTES.length;
+      qt.textContent = QUOTES[idx].t;
+      by.textContent = "—— " + QUOTES[idx].a;
+      card.classList.remove("pop");
+      void card.offsetWidth;
+      card.classList.add("pop");
+    };
+    const bottom = el("div", "quote-bottom");
+    bottom.append(by, refresh);
+    card.append(qt, bottom);
+    return card;
+  }
+
   // ---------- 工具 ----------
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -83,13 +147,16 @@
     const greet = el("div", "greet");
     greet.append(el("h1", "", "今日训练营"));
     const wd = WEEK[S.weekday()];
-    greet.append(el("p", "sub", `${wd} · 每天进步一点点，坚持就是胜利 💪`));
+    greet.append(el("p", "sub", `${wd} · 每天进步一点点，坚持就是胜利`));
     hero.append(greet);
     const snd = el("button", "icon-btn sound-btn", S.sound ? "🔊" : "🔇");
     snd.title = "音效开关";
     snd.onclick = () => { S.sound = !S.sound; S.save(); if (S.sound) sfx("ok"); render(); };
     hero.append(snd);
     page.append(hero);
+
+    // 每日励志
+    page.append(quoteCard());
 
     // 数据条
     const stats = el("div", "stats");
