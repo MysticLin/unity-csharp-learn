@@ -11,7 +11,12 @@
     schedule: [],        // { id, title, cat, wd, time, note, pdf:{id,name}|null }
     customTracks: [],    // 自建课程包 { id, name, emoji, lessons:[{id,title,blocks:[...]}] }
     goal: 2,             // 每日目标：完成 N 节课
-    freeUnlock: false
+    freeUnlock: false,
+    hearts: 5, heartTs: 0,                 // 红心（每 20 分钟回复 1 颗，0 表示满）
+    xpByDay: {},                           // 每日获得经验 { 'YYYY-MM-DD': n }
+    streakBest: 0,                         // 最长连击
+    quests: { date: "", q1: false, q2: false, q3: false },  // 每日任务
+    sound: true                            // 音效开关
   };
 
   let state;
@@ -41,13 +46,62 @@
     const t = today();
     if (S.streak.last === t) return;
     S.streak.count = (S.streak.last === yesterday()) ? S.streak.count + 1 : 1;
+    if (S.streak.count > S.streakBest) S.streakBest = S.streak.count;
     S.streak.last = t;
     S.days[t] = true;
     save();
   };
-  S.addXp = function (n) { S.xp += n; save(); };
+  S.addXp = function (n) {
+    S.xp += n;
+    S.xpByDay[today()] = (S.xpByDay[today()] || 0) + n;
+    save();
+  };
+  S.spendXp = function (n) { if (S.xp < n) return false; S.xp -= n; save(); return true; };
   S.level = function () { return Math.floor(S.xp / 100) + 1; };
   S.levelProgress = function () { return (S.xp % 100) / 100; };
+
+  // ---------- 红心 ----------
+  S.MAX_HEARTS = 5;
+  S.REGEN_MS = 20 * 60 * 1000;   // 每 20 分钟回 1 颗
+  S.getHearts = function () {
+    if (S.hearts >= S.MAX_HEARTS) return S.MAX_HEARTS;
+    const gained = Math.floor((Date.now() - S.heartTs) / S.REGEN_MS);
+    if (gained <= 0) return S.hearts;
+    S.hearts = Math.min(S.MAX_HEARTS, S.hearts + gained);
+    S.heartTs = S.hearts >= S.MAX_HEARTS ? 0 : S.heartTs + gained * S.REGEN_MS;
+    save();
+    return S.hearts;
+  };
+  S.loseHeart = function () {
+    const h = S.getHearts();
+    if (h <= 0) return 0;
+    S.hearts = h - 1;
+    S.heartTs = Date.now();
+    save();
+    return S.hearts;
+  };
+  S.refillHearts = function () { S.hearts = S.MAX_HEARTS; S.heartTs = 0; save(); };
+  S.nextHeartMs = function () {
+    if (S.getHearts() >= S.MAX_HEARTS) return 0;
+    return S.REGEN_MS - ((Date.now() - S.heartTs) % S.REGEN_MS);
+  };
+
+  // ---------- 每日任务 ----------
+  S.quest = function () {
+    if (S.quests.date !== today()) {
+      S.quests = { date: today(), q1: false, q2: false, q3: false };
+      save();
+    }
+    return S.quests;
+  };
+  // 首次完成返回 true 并发放奖励 XP
+  S.completeQuest = function (k, bonus) {
+    const q = S.quest();
+    if (q[k]) return false;
+    q[k] = true; save();
+    if (bonus) S.addXp(bonus);
+    return true;
+  };
 
   // 今日已完成课程数
   S.doneToday = function () {

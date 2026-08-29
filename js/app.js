@@ -19,6 +19,42 @@
     requestAnimationFrame(() => t.classList.add("show"));
     setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 300); }, 1800);
   }
+
+  // 合成音效（无音频文件）
+  let audioCtx = null;
+  function sfx(kind) {
+    if (!S.sound) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const t0 = audioCtx.currentTime;
+      const play = (f, st, dur, type, vol) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(vol || 0.1, t0 + st);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + st + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t0 + st); o.stop(t0 + st + dur);
+      };
+      if (kind === "ok") { play(880, 0, .1); play(1318, .09, .16); }
+      else if (kind === "no") { play(196, 0, .22, "square", .06); }
+      else if (kind === "done") { play(523, 0, .14); play(659, .12, .14); play(784, .24, .3); }
+    } catch (e) { /* 无声环境忽略 */ }
+  }
+  function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+  function confetti(container) {
+    const colors = ["#58cc02", "#1cb0f6", "#ff9600", "#ff4b4b", "#ce82ff", "#ffc800"];
+    for (let i = 0; i < 28; i++) {
+      const p = el("div", "confetti");
+      p.style.left = Math.random() * 100 + "%";
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = (Math.random() * 0.5) + "s";
+      p.style.animationDuration = (1.2 + Math.random() * 0.9) + "s";
+      container.appendChild(p);
+    }
+    setTimeout(() => container.querySelectorAll(".confetti").forEach(c => c.remove()), 2800);
+  }
   function ring(pct, label, sub) {
     const wrap = el("div", "ring-box");
     const size = 120, r = 52, c = 2 * Math.PI * r;
@@ -43,12 +79,16 @@
   // ---------- 今日 ----------
   function renderHome() {
     const page = el("div", "page");
-    const hero = el("div", "hero");
+    const hero = el("div", "hero hero-row");
     const greet = el("div", "greet");
     greet.append(el("h1", "", "今日训练营"));
     const wd = WEEK[S.weekday()];
-    greet.append(el("p", "sub", `${wd} · 每天进步一点点，连击不断才是真本事`));
+    greet.append(el("p", "sub", `${wd} · 每天进步一点点，坚持就是胜利 💪`));
     hero.append(greet);
+    const snd = el("button", "icon-btn sound-btn", S.sound ? "🔊" : "🔇");
+    snd.title = "音效开关";
+    snd.onclick = () => { S.sound = !S.sound; S.save(); if (S.sound) sfx("ok"); render(); };
+    hero.append(snd);
     page.append(hero);
 
     // 数据条
@@ -56,6 +96,55 @@
     const st = (e, v, t) => { const d = el("div", "stat"); d.append(el("div", "stat-v", e + " " + v), el("div", "stat-t", t)); return d; };
     stats.append(st("🔥", S.streak.count, "连续天数"), st("⚡", S.xp, "总经验"), st("🏅", "Lv." + S.level(), "等级"));
     page.append(stats);
+
+    // 连击日历（近 7 天）
+    const strip = el("div", "card strip-card");
+    const stripHead = el("div", "strip-head");
+    stripHead.append(el("span", "", "📅 近 7 天"), el("span", "muted small", `最长连击 ${S.streakBest} 天`));
+    strip.append(stripHead);
+    const dots = el("div", "strip-dots");
+    for (let d = 6; d >= 0; d--) {
+      const dt = new Date(); dt.setDate(dt.getDate() - d);
+      const key = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+      const cell = el("div", "strip-cell" + (S.days[key] ? " on" : "") + (d === 0 ? " today" : ""));
+      cell.append(el("span", "strip-mark", S.days[key] ? "✅" : "·"), el("span", "strip-lab", "日一二三四五六"[dt.getDay()]));
+      dots.append(cell);
+    }
+    strip.append(dots);
+    page.append(strip);
+
+    // 每日任务
+    const dq = S.quest();
+    const qcard = el("div", "card quest-card");
+    qcard.append(el("h3", "", "🎯 今日任务" + (dq.q1 && dq.q2 && dq.q3 ? " · 全部完成 🎉" : "")));
+    [["q1", "完成 1 节课程", 5], ["q2", "单次练习连对 5 题", 10], ["q3", "一节课全对通关", 10]].forEach(([k, txt, bonus]) => {
+      const row = el("div", "quest-row" + (dq[k] ? " done" : ""));
+      row.append(el("span", "quest-mark", dq[k] ? "✅" : "⬜"), el("span", "quest-txt", txt), el("span", "quest-xp", "+" + bonus + " XP"));
+      qcard.append(row);
+    });
+    page.append(qcard);
+
+    // 近 7 天经验图
+    const chart = el("div", "card chart-card");
+    chart.append(el("h3", "", "📊 近 7 天经验"));
+    const bars = el("div", "xp-bars");
+    const vals = [];
+    for (let d = 6; d >= 0; d--) {
+      const dt = new Date(); dt.setDate(dt.getDate() - d);
+      const key = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+      vals.push({ label: "日一二三四五六"[dt.getDay()], v: S.xpByDay[key] || 0, today: d === 0 });
+    }
+    const maxV = Math.max.apply(null, vals.map(v => v.v).concat([1]));
+    vals.forEach(v => {
+      const col = el("div", "xp-col");
+      const bar = el("div", "xp-bar" + (v.today ? " now" : ""));
+      bar.style.height = Math.max(4, Math.round(v.v / maxV * 64)) + "px";
+      bar.title = v.v + " XP";
+      col.append(bar, el("span", "xp-lab", v.label));
+      bars.append(col);
+    });
+    chart.append(bars);
+    page.append(chart);
 
     // 每日目标环
     const done = S.doneToday(), goal = S.goal;
@@ -236,15 +325,42 @@
   function startLesson(id, reviewList) {
     if (reviewList && !reviewList.length) { location.hash = "#/review"; return; }
     const lesson = reviewList ? null : S.findLesson(id);
+    if (!reviewList && S.getHearts() === 0) {
+      showHeartsFail(() => startLesson(id, null));
+      return;
+    }
     LP = {
       review: !!reviewList,
       list: reviewList || [{ lesson, q: null }],  // review: [{lesson,q,qi}]
       qi: 0,
       stage: (reviewList || (lesson && !lesson.kps)) ? "quiz" : "cards",
       correct: 0,
+      streak: 0,
       answered: false
     };
     renderLP();
+  }
+
+  // 红心耗尽弹窗
+  function showHeartsFail(onContinue) {
+    if (document.querySelector(".hearts-modal")) return;
+    const modal = el("div", "modal hearts-modal");
+    const box = el("div", "modal-box heart-box");
+    box.append(el("div", "result-emoji", "💔"));
+    box.append(el("h2", "", "红心用完啦"));
+    box.append(el("p", "muted", "答错扣一颗心，等待回血、做错题练习或用经验补满。"));
+    const mins = Math.max(1, Math.ceil(S.nextHeartMs() / 60000));
+    box.append(el("p", "muted small", `下一颗心约 ${mins} 分钟后回复`));
+    const buy = el("button", "btn primary big", "用 20 XP 补满红心");
+    if (S.xp < 20) { buy.disabled = true; buy.textContent = `用 20 XP 补满（当前 ${S.xp} XP）`; }
+    buy.onclick = () => { if (S.spendXp(20)) { S.refillHearts(); modal.remove(); toast("❤️ 红心已回满"); if (onContinue) onContinue(); } };
+    const review = el("button", "btn accent big", "🔁 去错题练习，完成即回满");
+    review.onclick = () => { modal.remove(); LP = null; location.hash = "#/review"; };
+    const quit = el("button", "btn ghost big", "退出本次练习");
+    quit.onclick = () => { modal.remove(); LP = null; location.hash = "#/learn/cs"; };
+    box.append(buy, review, quit);
+    modal.append(box);
+    document.body.appendChild(modal);
   }
 
   function renderLP() {
@@ -310,19 +426,32 @@
           if (picked) return;
           picked = true;
           const right = oi === q.a;
-          if (right) { b.classList.add("right"); LP.correct++; if (LP.review) S.removeWrong(item.lesson.id, item.qi); }
-          else {
+          if (right) {
+            b.classList.add("right"); LP.correct++; LP.streak++;
+            sfx("ok");
+            if (LP.review) S.removeWrong(item.lesson.id, item.qi);
+            if (LP.streak >= 5 && S.completeQuest("q2", 10)) toast("🏆 任务达成：连对 5 题 +10 XP");
+          } else {
             b.classList.add("wrong");
-            if (!LP.review) S.addWrong(lesson.id, LP.qi);
             opts.children[q.a].classList.add("right");
+            LP.streak = 0;
+            sfx("no"); buzz(60);
+            if (!LP.review) S.addWrong(lesson.id, LP.qi);
+            if (S.loseHeart() === 0) LP.dead = true;
           }
+          const hNow = S.getHearts();
+          const heartTxt = LP.review || right ? "" : `${hNow}/${S.MAX_HEARTS} ` + "❤️".repeat(hNow) + "🖤".repeat(S.MAX_HEARTS - hNow);
           feedback.append(el("p", right ? "fb ok" : "fb no", (right ? "✅ 答对了！ " : "❌ 答错了。 ") + q.ex));
-          const nxt = el("button", "btn primary", LP.qi + 1 >= totalSteps ? "查看结果" : "下一题");
+          const last = LP.qi + 1 >= totalSteps;
+          const nxt = el("button", "btn primary", last ? "查看结果" : "下一题");
           nxt.onclick = () => {
-            if (LP.qi + 1 >= totalSteps) finishQuiz();
+            if (!LP.review && S.getHearts() === 0) { showHeartsFail(() => renderLP()); return; }
+            if (last) finishQuiz();
             else { LP.qi++; renderLP(); }
           };
           feedback.append(nxt);
+          const hb = el("div", "q-hearts", heartTxt.trim() ? "红心 " + heartTxt.trim() : "");
+          feedback.append(hb);
           [...opts.children].forEach(c => c.disabled = true);
         };
         opts.append(b);
@@ -336,9 +465,13 @@
     // 结果页
     const lessonRes = LP.result;
     const card = el("div", "card result-card");
+    confetti(card);
+    sfx("done"); buzz(30);
     card.append(el("div", "result-emoji", lessonRes.correct === totalSteps ? "🏆" : lessonRes.correct * 2 >= totalSteps ? "🎉" : "💪"));
     card.append(el("h1", "", lessonRes.correct === totalSteps ? "完美通关！" : "本次训练完成"));
-    card.append(el("p", "muted", `答对 ${lessonRes.correct}/${totalSteps} 题 · 获得 ⚡${lessonRes.xp} XP${LP.review ? "（错题答对已移出错题本）" : ""}`));
+    card.append(el("div", "result-xp", "+" + lessonRes.xp + " XP"));
+    card.append(el("p", "muted", `答对 ${lessonRes.correct}/${totalSteps} 题` + (lessonRes.first ? " · 首次通关奖励已含" : "")));
+    if (LP.review) card.append(el("p", "muted small", "❤️ 错题练习完成，红心已回满"));
     const btns = el("div", "result-btns");
     const again = el("button", "btn ghost", "再练一次");
     again.onclick = () => { startLesson(LP.result.id, LP.review ? collectReview() : null); };
@@ -359,12 +492,15 @@
   function finishQuiz() {
     const total = LP.review ? LP.list.length : LP.list[0].lesson.qs.length;
     if (LP.review) {
-      LP.result = { correct: LP.correct, xp: LP.correct * 5, trackId: "cs", id: null };
+      S.refillHearts();
+      LP.result = { correct: LP.correct, xp: LP.correct * 5, trackId: "cs", id: null, refilled: true };
     } else {
       const lesson = LP.list[0].lesson;
       const first = !(S.lessons[lesson.id] && S.lessons[lesson.id].done);
       const xp = S.completeLesson(lesson.id, LP.correct, total, first);
-      LP.result = { correct: LP.correct, xp, trackId: lesson.track.id, id: lesson.id };
+      if (S.completeQuest("q1", 5)) toast("🏆 任务达成：完成 1 节课 +5 XP");
+      if (LP.correct === total && S.completeQuest("q3", 10)) toast("🏆 任务达成：全对通关 +10 XP");
+      LP.result = { correct: LP.correct, xp, trackId: lesson.track.id, id: lesson.id, first };
     }
     LP.stage = "done";
     renderLP();
@@ -856,8 +992,13 @@
             if (picked) return;
             picked = true;
             const right = oi === b.a;
-            if (right) { btn.classList.add("right"); quizCorrect++; S.removeWrong("x_" + lesson.id, qi); }
-            else { btn.classList.add("wrong"); opts.children[b.a].classList.add("right"); S.addWrong("x_" + lesson.id, qi); }
+            if (right) { btn.classList.add("right"); quizCorrect++; sfx("ok"); S.removeWrong("x_" + lesson.id, qi); }
+            else {
+              btn.classList.add("wrong"); opts.children[b.a].classList.add("right");
+              sfx("no"); buzz(60);
+              S.addWrong("x_" + lesson.id, qi);
+              if (S.loseHeart() === 0) toast("💔 红心用完了，去「复习」做错题可回满");
+            }
             feedback.append(el("p", right ? "fb ok" : "fb no", (right ? "✅ 答对了！ " : "❌ 答错了。 ") + (b.ex || "")));
             [...opts.children].forEach(c => c.disabled = true);
           };

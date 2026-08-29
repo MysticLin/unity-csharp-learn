@@ -17,7 +17,9 @@ window.UNITY_COURSE = {
       qs: [
         { q: "GameObject 与 Component 的关系是？", opts: ["物体是组件的容器，功能由组件提供", "组件包含多个物体", "两者是同一个概念", "物体必须依赖脚本才能显示"], a: 0, ex: "Transform、Renderer、脚本……都是挂在物体上的组件。" },
         { q: "Prefab（预制体）的作用是？", opts: ["可复用的物体模板", "保存场景的文件", "音频资源格式", "项目备份包"], a: 0, ex: "改一处模板，所有实例同步，非常适合子弹、敌人。" },
-        { q: "手动摆放物体位置，在哪个视图最直观？", opts: ["Scene 视图", "Game 视图", "Project 视图", "Console 视图"], a: 0, ex: "Scene 是编辑视图；Game 是运行时玩家看到的画面。" }
+        { q: "手动摆放物体位置，在哪个视图最直观？", opts: ["Scene 视图", "Game 视图", "Project 视图", "Console 视图"], a: 0, ex: "Scene 是编辑视图；Game 是运行时玩家看到的画面。" },
+        { q: "Game 视图里看到的内容由什么决定？", opts: ["Scene 中相机拍到并渲染出来的画面", "Hierarchy 的排列顺序", "Project 窗口选中的资源", "Console 的日志"], a: 0, ex: "Game 视图 = 相机视角的实时渲染结果，相机拍不到的就不会显示。" },
+        { q: "想让某个组件暂时不生效（如关掉脚本但不删），应该？", opts: ["组件 Inspector 里取消勾选 enabled", "Destroy 这个组件", "删除整个物体", "改脚本名"], a: 0, ex: "组件都有 enabled 开关；物体级开关是 gameObject.SetActive(false)，两者别混淆。" }
       ]
     },
     {
@@ -30,7 +32,8 @@ window.UNITY_COURSE = {
       qs: [
         { q: "自定义脚本默认继承哪个类？", opts: ["MonoBehaviour", "Object", "Script", "Component"], a: 0, ex: "继承 MonoBehaviour 才能作为组件挂载并享受生命周期。" },
         { q: "输出日志到 Console 用？", opts: ["Debug.Log()", "System.out.println()", "echo", "printf"], a: 0, ex: "print() 也能用（是 Debug.Log 的简写），但 Debug.Log 更标准。" },
-        { q: "关于脚本文件名，正确的是？", opts: ["必须与类名一致才能挂到物体上", "随便取名", "必须全小写", "必须与场景同名"], a: 0, ex: "Unity 按文件名反序列化组件，类名文件名不一致会报错。" }
+        { q: "关于脚本文件名，正确的是？", opts: ["必须与类名一致才能挂到物体上", "随便取名", "必须全小写", "必须与场景同名"], a: 0, ex: "Unity 按文件名反序列化组件，类名文件名不一致会报错。" },
+        { q: "想拖到 Inspector 里赋值，但又不想被其他脚本随便访问，用？", opts: ["public 字段", "[SerializeField] private 字段", "const 常量", "static 字段"], a: 1, ex: "私有 + 序列化特性 = 封装与可配置兼得，专业项目的主流写法。" }
       ]
     },
     {
@@ -43,7 +46,9 @@ window.UNITY_COURSE = {
         { q: "每帧调用一次的函数是？", opts: ["Update", "Start", "Awake", "OnDestroy"], a: 0, ex: "Update 每渲染帧执行，帧率越高调用越频繁。" },
         { q: "对 Rigidbody 施加作用力应写在？", opts: ["FixedUpdate", "Update", "LateUpdate", "OnGUI"], a: 0, ex: "物理引擎按固定时间步模拟，力的施加要放进 FixedUpdate。" },
         { q: "Awake 和 Start 的区别是？", opts: ["Awake 在激活时先调用，Start 在首次 Update 前调用", "没有区别", "Start 先执行", "Awake 每帧执行"], a: 0, ex: "Awake 保证\"最早\"，Start 保证\"其他对象已就绪\"，顺序 Awake→OnEnable→Start。" },
-        { q: "相机平滑跟随玩家，最好写在？", opts: ["LateUpdate", "FixedUpdate", "Awake", "OnDestroy"], a: 0, ex: "LateUpdate 在所有 Update 后执行，避免玩家移动后相机慢一帧的抖动。" }
+        { q: "相机平滑跟随玩家，最好写在？", opts: ["LateUpdate", "FixedUpdate", "Awake", "OnDestroy"], a: 0, ex: "LateUpdate 在所有 Update 后执行，避免玩家移动后相机慢一帧的抖动。" },
+        { q: "物体取消激活（SetActive(false)）时会调用？", opts: ["OnDisable", "OnDestroy", "OnLost", "OnPause"], a: 0, ex: "OnEnable / OnDisable 与激活状态一一对应，重新激活时会再走 OnEnable。" },
+        { q: "两个脚本都写了 Update，同一帧内的执行顺序？", opts: ["按脚本文件名排序，永远固定", "不保证顺序，不要依赖它", "按挂载顺序永远固定", "每帧随机"], a: 1, ex: "引擎不保证跨脚本 Update 顺序，有依赖应放在 Awake/Start 或用事件解耦。" }
       ]
     },
     {
@@ -56,7 +61,9 @@ window.UNITY_COURSE = {
       qs: [
         { q: "让物体每帧朝前移动的常见写法是？", opts: ["transform.Translate(Vector3.forward * speed * Time.deltaTime)", "object.Move(forward)", "transform.Translate(forward)", "transform.Goto(0,0,1)"], a: 0, ex: "乘 Time.deltaTime 使移动速度与帧率无关。" },
         { q: "position 与 localPosition 的区别？", opts: ["localPosition 是相对父物体的坐标", "完全相同", "localPosition 是世界坐标", "position 是只读的"], a: 0, ex: "没有父物体时两者相同；有父物体时 localPosition 是相对值。" },
-        { q: "关于 GameObject.FindWithTag，说法正确的是？", opts: ["可用但应缓存结果，避免每帧查找", "每帧调用没有任何开销", "只能找自己", "已废弃无法使用"], a: 0, ex: "字符串查找有开销，一般在 Start 里查一次存到字段。" }
+        { q: "关于 GameObject.FindWithTag，说法正确的是？", opts: ["可用但应缓存结果，避免每帧查找", "每帧调用没有任何开销", "只能找自己", "已废弃无法使用"], a: 0, ex: "字符串查找有开销，一般在 Start 里查一次存到字段。" },
+        { q: "让物体\"看向\"某个目标（Z 轴指向目标），用？", opts: ["transform.LookAt(target)", "transform.Face(target)", "rotation = target", "transform.TurnTo(target)"], a: 0, ex: "LookAt 常用于炮塔瞄准、相机注视、角色朝向目标。" },
+        { q: "计算两个坐标点之间的距离，正确的是？", opts: ["Vector3.Distance(a, b)", "a - b", "a.magnitude", "Distance(gameObjectA)"], a: 0, ex: "参数是两个 Vector3 坐标；a-b 只是向量差，自身长度要再 .magnitude。" }
       ]
     },
     {
@@ -68,7 +75,8 @@ window.UNITY_COURSE = {
       qs: [
         { q: "获取同物体上 Rigidbody 组件的写法是？", opts: ["GetComponent<Rigidbody>()", "GetRigidbody()", "Find<Rigidbody>()", "new Rigidbody()"], a: 0, ex: "泛型版最常用；组件获取后建议存字段复用。" },
         { q: "同一个物体上能挂多个同类型脚本组件吗？", opts: ["可以", "不行", "最多两个", "只有 UI 物体可以"], a: 0, ex: "同一脚本类可以重复挂载，各自独立运行（Transform 这类唯一组件除外）。" },
-        { q: "[RequireComponent(typeof(Rigidbody))] 的作用是？", opts: ["挂载时自动添加所需组件", "删除指定组件", "给脚本重命名", "禁用脚本"], a: 0, ex: "声明\"我依赖这个组件\"，Unity 自动补齐。" }
+        { q: "[RequireComponent(typeof(Rigidbody))] 的作用是？", opts: ["挂载时自动添加所需组件", "删除指定组件", "给脚本重命名", "禁用脚本"], a: 0, ex: "声明\"我依赖这个组件\"，Unity 自动补齐。" },
+        { q: "在 Update 里每帧都 GetComponent 的写法，评价是？", opts: ["完全没问题", "有开销，应在 Awake/Start 缓存成字段", "一定报错", "只能写在 Start"], a: 1, ex: "组件查找有成本，每帧调用浪费性能；缓存引用是基本优化。" }
       ]
     },
     {
@@ -81,7 +89,9 @@ window.UNITY_COURSE = {
       qs: [
         { q: "持续检测\"按住 W 键\"应该用？", opts: ["Input.GetKey(KeyCode.W)", "Input.GetKeyDown(KeyCode.W)", "Input.GetKeyUp(KeyCode.W)", "Input.anyKeyDown"], a: 0, ex: "*Down/*Up 只触发瞬间一帧，按住要用 GetKey。" },
         { q: "Input.GetAxis(\"Horizontal\") 的返回值范围？", opts: ["-1 到 1 的平滑值", "0 或 1", "像素坐标", "布尔值"], a: 0, ex: "平滑过渡的手感更好，GetAxisRaw 才是 -1/0/1。" },
-        { q: "关于移动端触屏，正确的是？", opts: ["老输入用 Input.touchCount，也可换用 Input System 包", "完全不支持", "只有安卓支持", "必须写 Java 代码"], a: 0, ex: "跨平台输入新方案是官方 Input System 包。" }
+        { q: "关于移动端触屏，正确的是？", opts: ["老输入用 Input.touchCount，也可换用 Input System 包", "完全不支持", "只有安卓支持", "必须写 Java 代码"], a: 0, ex: "跨平台输入新方案是官方 Input System 包。" },
+        { q: "检测玩家单击场景中的物体（如点敌人），简单做法是？", opts: ["目标挂 Collider 并写 OnMouseDown", "在 OnGUI 里判断", "必须自己写射线且无现成回调", "用 OnCollisionEnter"], a: 0, ex: "OnMouseDown 依赖 Collider 命中检测，点击/触摸都触发。" },
+        { q: "GetAxis 和 GetKey 做移动的最大区别？", opts: ["GetAxis 更费性能", "GetAxis 返回 -1~1 平滑渐变，手感更好", "GetKey 只能控制 UI", "没有区别"], a: 1, ex: "GetKey 是硬开关（0 或 1），GetAxis 自带缓动适合连续运动。" }
       ]
     },
     {
@@ -95,7 +105,9 @@ window.UNITY_COURSE = {
         { q: "让物体受重力和力作用，必须添加？", opts: ["Rigidbody", "只加 Collider 就够", "MeshRenderer", "AudioSource"], a: 0, ex: "Collider 决定形状，Rigidbody 决定物理行为。" },
         { q: "Collider 勾选 IsTrigger 后？", opts: ["不再实体碰撞，但触发 OnTriggerEnter", "变得更硬", "无法再移动", "自动受重力"], a: 0, ex: "触发器用于\"穿过检测\"，如金币、传送门。" },
         { q: "OnCollisionEnter 的触发条件是？", opts: ["双方有 Collider 且至少一方有 Rigidbody（非 Trigger）", "任意两个物体靠近", "鼠标点击物体", "只在 2D 项目生效"], a: 0, ex: "纯 Collider 对 Collider（无刚体）不会走物理回调。" },
-        { q: "给物体施加爆炸冲力用哪个方法？", opts: ["rb.AddForce(..., ForceMode.Impulse)", "transform.AddForce", "rb.SetForce", "rigid.Force()"], a: 0, ex: "AddForce 在 FixedUpdate 中调用，Impulse 模式适合瞬间冲击。" }
+        { q: "给物体施加爆炸冲力用哪个方法？", opts: ["rb.AddForce(..., ForceMode.Impulse)", "transform.AddForce", "rb.SetForce", "rigid.Force()"], a: 0, ex: "AddForce 在 FixedUpdate 中调用，Impulse 模式适合瞬间冲击。" },
+        { q: "角色\"贴墙不穿、站移动平台能跟随\"这类完整物理交互，通常需要？", opts: ["只加 Collider 就够", "Rigidbody + Collider（必要时物理材质调摩擦）", "只加 MeshCollider 不加刚体", "每帧用 Transform 硬改坐标"], a: 1, ex: "刚体参与物理模拟才能正确处理推挤、摩擦与平台携带。" },
+        { q: "OnCollisionEnter(Collision collision) 的参数能拿到？", opts: ["接触点集合与相对速度", "对方脚本源代码", "对方的 Prefab 文件名", "只有碰撞音量"], a: 0, ex: "collision.contacts / relativeVelocity 常用于撞击特效和伤害计算。" }
       ]
     },
     {
@@ -107,7 +119,8 @@ window.UNITY_COURSE = {
       qs: [
         { q: "运行时按模板生成子弹的 API 是？", opts: ["Instantiate(prefab, pos, rot)", "Create(prefab)", "Spawn.New(prefab)", "Copy.Make(prefab)"], a: 0, ex: "Instantiate 返回克隆出来的实例引用。" },
         { q: "销毁游戏物体的正确写法？", opts: ["Destroy(gameObject)", "Delete(gameObject)", "gameObject.Remove()", "Kill(gameObject)"], a: 0, ex: "Destroy(obj, t) 还能延迟销毁。" },
-        { q: "想一次修改让所有 Prefab 实例都生效，应该？", opts: ["进入 Prefab 模式修改模板", "逐个修改场景实例", "每次运行时用代码改", "Prefab 无法修改"], a: 0, ex: "Prefab 模式（或覆盖 Apply）保证模板与实例同步。" }
+        { q: "想一次修改让所有 Prefab 实例都生效，应该？", opts: ["进入 Prefab 模式修改模板", "逐个修改场景实例", "每次运行时用代码改", "Prefab 无法修改"], a: 0, ex: "Prefab 模式（或覆盖 Apply）保证模板与实例同步。" },
+        { q: "子弹高频 Instantiate/Destroy 导致掉帧，工业界标准解法是？", opts: ["换更高配置的电脑", "对象池：预生成、隐藏/激活复用", "降低子弹伤害", "改用协程生成"], a: 1, ex: "实例化/销毁有 GC 与初始化开销；对象池只创建一次，反复启用。" }
       ]
     },
     {
@@ -119,7 +132,9 @@ window.UNITY_COURSE = {
       qs: [
         { q: "启动协程的正确写法？", opts: ["StartCoroutine(MyRoutine())", "Run(MyRoutine)", "Start(MyRoutine())", "Invoke.Coroutine()"], a: 0, ex: "参数传方法调用或方法名字符串，返回 Coroutine 引用可用来停止。" },
         { q: "协程中等待 3 秒的写法？", opts: ["yield return new WaitForSeconds(3f)", "Wait(3)", "sleep(3)", "yield return 3"], a: 0, ex: "受 Time.timeScale 影响；要真实时间用 WaitForSecondsRealtime。" },
-        { q: "协程的主要价值是？", opts: ["分帧/延时执行逻辑而不阻塞主线程", "真正的多线程并行计算", "替代 Update 的唯一方式", "只能用于播放动画"], a: 0, ex: "协程仍在主线程，是\"时间维度上的切片\"，不是并行。" }
+        { q: "协程的主要价值是？", opts: ["分帧/延时执行逻辑而不阻塞主线程", "真正的多线程并行计算", "替代 Update 的唯一方式", "只能用于播放动画"], a: 0, ex: "协程仍在主线程，是\"时间维度上的切片\"，不是并行。" },
+        { q: "Time.timeScale = 0（暂停）时，用 WaitForSeconds 的协程会？", opts: ["照常继续", "被一起暂停等待", "立刻完成", "直接报错"], a: 1, ex: "它按缩放时间等待；要无视暂停用 WaitForSecondsRealtime。" },
+        { q: "只停止某一个正在运行的协程，应该？", opts: ["启动时保存 Coroutine 引用，传给 StopCoroutine", "只能 StopAllCoroutines 全停", "无法中途停止", "用 Destroy 停"], a: 0, ex: "Coroutine c = StartCoroutine(x); ... StopCoroutine(c) 精准停止。" }
       ]
     },
     {
@@ -132,7 +147,8 @@ window.UNITY_COURSE = {
       qs: [
         { q: "UI 元素必须放在哪个物体下？", opts: ["Canvas", "Camera", "Light", "任意空物体"], a: 0, ex: "没有 Canvas 的 UI 不参与 UI 渲染。" },
         { q: "代码里给按钮绑定点击事件用？", opts: ["btn.onClick.AddListener(方法)", "btn.onTouch += 方法", "btn.Press(方法)", "btn.Click()"], a: 0, ex: "onClick 是 UnityEvent，AddListener 可订阅多个回调。" },
-        { q: "推荐使用的文本组件是？", opts: ["TextMeshPro (TMP)", "旧版 Text", "Label", "MessageBox"], a: 0, ex: "TMP 用 SDF 渲染，更清晰、功能更强，官方推荐。" }
+        { q: "推荐使用的文本组件是？", opts: ["TextMeshPro (TMP)", "旧版 Text", "Label", "MessageBox"], a: 0, ex: "TMP 用 SDF 渲染，更清晰、功能更强，官方推荐。" },
+        { q: "UI 在不同分辨率手机上不乱跑，主要靠 RectTransform 的？", opts: ["Anchor 锚点适配", "Pivot 轴心", "Image 颜色", "Z 轴位置"], a: 0, ex: "锚点把元素钉在父容器参考点上，配合 Canvas Scaler 做全机型适配。" }
       ]
     },
     {
@@ -145,7 +161,8 @@ window.UNITY_COURSE = {
       qs: [
         { q: "切换到名为 Level2 的场景用？", opts: ["SceneManager.LoadScene(\"Level2\")", "Scene.Go(\"Level2\")", "Load.Scene(\"Level2\")", "Application.ChangeScene()"], a: 0, ex: "需 using UnityEngine.SceneManagement。" },
         { q: "DontDestroyOnLoad(gameObject) 的效果是？", opts: ["切换场景时该物体保留", "物体永不被玩家删除", "隐藏物体", "复制一份场景"], a: 0, ex: "全局音乐、管理器靠它存活。" },
-        { q: "要让场景能被 LoadScene 加载，必须？", opts: ["在 Build Settings/Build Profiles 中加入该场景", "什么都不用做", "把场景设为只读", "删除其他场景"], a: 0, ex: "未加入构建列表的场景运行时无法加载。" }
+        { q: "要让场景能被 LoadScene 加载，必须？", opts: ["在 Build Settings/Build Profiles 中加入该场景", "什么都不用做", "把场景设为只读", "删除其他场景"], a: 0, ex: "未加入构建列表的场景运行时无法加载。" },
+        { q: "大场景加载时不想卡死画面，应该用？", opts: ["SceneManager.LoadSceneAsync（可做进度条）", "同步 LoadScene 硬扛", "多 new 几个 Scene", "Application.OpenURL"], a: 0, ex: "异步加载返回 AsyncOperation，配合协程显示加载进度。" }
       ]
     },
     {
@@ -159,7 +176,9 @@ window.UNITY_COURSE = {
       qs: [
         { q: "Roll-a-Ball 中玩家移动的实现组合是？", opts: ["Input.GetAxis 读输入 + Rigidbody.AddForce", "纯 Transform.position 赋值", "UI 按钮拖动", "相机带着玩家飞"], a: 0, ex: "物理小球用刚体施力最自然，写在 FixedUpdate。" },
         { q: "计分 UI 应该在什么时机更新？", opts: ["拾取触发（OnTriggerEnter）时更新文本", "每秒自动刷新", "游戏结束后统一算", "不需要更新"], a: 0, ex: "事件发生时更新，逻辑直观且省性能。" },
-        { q: "判断胜利的典型做法是？", opts: ["分数达到总数后显示胜利 UI / 切换场景", "重启编辑器", "等待 24 小时", "Unity 自动判断"], a: 0, ex: "简单 if 判断 + SetActive(true) 就是你的第一个游戏流程控制。" }
+        { q: "判断胜利的典型做法是？", opts: ["分数达到总数后显示胜利 UI / 切换场景", "重启编辑器", "等待 24 小时", "Unity 自动判断"], a: 0, ex: "简单 if 判断 + SetActive(true) 就是你的第一个游戏流程控制。" },
+        { q: "播放拾取金币这类一次性短音效，推荐？", opts: ["AudioSource.PlayOneShot(clip)", "每个音效挂一个新 AudioSource", "用 VideoPlayer 播", "改主音量"], a: 0, ex: "PlayOneShot 可叠加播放，互不打断，是短音效标配。" },
+        { q: "相机跟随想柔和有弹性，而不是生硬贴上去，常用？", opts: ["Vector3.Lerp 插值过渡", "直接等于目标坐标", "随机加偏移", "坐标除以 deltaTime"], a: 0, ex: "Lerp(当前位置, 目标位置, 平滑系数) 让相机\"缓动\"跟随。" }
       ]
     }
   ]

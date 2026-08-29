@@ -215,7 +215,7 @@ pre.code {
 .nav-btn.active { background: #f0fbe6; }
 
 /* ---------- 弹窗 ---------- */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .modal-box { background: #fff; border-radius: var(--radius); width: 100%; max-width: 560px; display: flex; flex-direction: column; overflow: hidden; }
 .pdf-box { height: 85vh; }
 .modal-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 2px solid var(--line); }
@@ -251,6 +251,40 @@ pre.code {
 .video-wrap { position: relative; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #000; }
 .video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .video-file { width: 100%; border-radius: 12px; background: #000; max-height: 70vw; }
+
+/* ---------- 游戏化：日历/任务/经验图/红心/撒花 ---------- */
+.hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.sound-btn { font-size: 1.3rem; padding: 4px; }
+.strip-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-weight: 800; }
+.strip-dots { display: flex; justify-content: space-between; }
+.strip-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+.strip-mark { width: 30px; height: 30px; border-radius: 50%; background: var(--line); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: .8rem; }
+.strip-cell.on .strip-mark { background: var(--green); color: #fff; }
+.strip-cell.today .strip-mark { outline: 2px solid var(--orange); outline-offset: 2px; }
+.strip-lab { font-size: .68rem; color: var(--muted); }
+
+.quest-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.quest-row:first-of-type { border-top: 0; }
+.quest-card h3 { margin-bottom: 4px; }
+.quest-mark { font-size: 1rem; }
+.quest-txt { flex: 1; font-size: .92rem; }
+.quest-row.done .quest-txt { color: var(--muted); text-decoration: line-through; }
+.quest-xp { font-size: .78rem; font-weight: 800; color: var(--blue); }
+
+.xp-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 90px; padding-top: 6px; }
+.xp-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; flex: 1; height: 100%; }
+.xp-bar { width: 60%; max-width: 30px; min-height: 4px; background: #dcdcdc; border-radius: 6px 6px 2px 2px; transition: height .4s; }
+.xp-bar.now { background: var(--green); }
+.xp-lab { font-size: .68rem; color: var(--muted); }
+
+.result-xp { font-size: 1.9rem; font-weight: 800; color: var(--orange); margin: 2px 0; }
+.result-card { position: relative; overflow: hidden; }
+.confetti { position: absolute; top: -12px; width: 8px; height: 13px; border-radius: 2px; animation: confetti-fall linear forwards; z-index: 2; pointer-events: none; }
+@keyframes confetti-fall { to { transform: translateY(430px) rotate(560deg); } }
+.heart-box { text-align: center; padding: 26px 18px; }
+.heart-box h2 { margin-bottom: 4px; }
+.heart-box .btn { margin-top: 10px; }
+.q-hearts { text-align: center; color: var(--muted); font-size: .8rem; min-height: 0; margin-top: 8px; }
 
 /* 桌面微调 */
 @media (min-width: 560px) {
