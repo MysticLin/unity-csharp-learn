@@ -106,8 +106,10 @@
       return c;
     };
     quick.append(
-      q("🎯", "C# 课程", "从变量到 LINQ", "#/learn/cs"),
-      q("🎮", "Unity 课程", "从编辑器到实战", "#/learn/u"),
+      q("🎯", "C# 基础", "从变量到 LINQ", "#/learn/cs"),
+      q("🎮", "Unity 核心", "从编辑器到实战", "#/learn/u"),
+      q("🧮", "算法题库", "10 专题 50 题", "#/learn/algo"),
+      q("🗂️", "我的课程", "自建学习内容", "#/custom"),
       q("🔁", "错题重练", `错题 ${Object.keys(S.wrong).length} 道`, "#/review"),
       q("🌐", "GitHub 资源", "更多学习仓库", "#/resources")
     );
@@ -186,14 +188,14 @@
     page.append(el("p", "sub muted", "按顺序闯关：完成上一课自动解锁下一课。学完知识点后答题，全部课程共 " + S.allLessons().length + " 节。"));
 
     const tabs = el("div", "tabs");
-    [window.CSHARP_COURSE, window.UNITY_COURSE].forEach(c => {
+    [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE].forEach(c => {
       const t = el("button", "tab" + (c.id === trackId ? " active" : ""), `${c.emoji} ${c.short}`);
       t.onclick = () => { location.hash = "#/learn/" + c.id; };
       tabs.append(t);
     });
     page.append(tabs);
 
-    const course = trackId === "cs" ? window.CSHARP_COURSE : window.UNITY_COURSE;
+    const course = trackId === "cs" ? window.CSHARP_COURSE : trackId === "u" ? window.UNITY_COURSE : window.ALGO_COURSE;
     const info = el("div", "card track-info");
     info.append(el("h3", "", `${course.emoji} ${course.title}`), el("p", "muted small", course.desc));
     const doneN = course.lessons.filter(l => S.lessons[l.id] && S.lessons[l.id].done).length;
@@ -888,6 +890,9 @@
       ["🗺️ UnityPath-DiDiao", "jlgulu/UnityPath-DiDiao", "Unity3D 书籍推荐 + 完整学习路线 + 视频教程", "https://github.com/jlgulu/UnityPath-DiDiao"],
       ["🛤️ unity-learning-path", "MetaZhi/unity-learning-path", "知乎大智「不走弯路」Unity 主程方向学习路线", "https://github.com/MetaZhi/unity-learning-path"],
       ["📚 DotNetGuide", "YSGStudyHards/DotNetGuide", "C#/.NET 学习、工作、面试指南（中文）", "https://github.com/YSGStudyHards/DotNetGuide"],
+      ["🧮 algorithm-pattern-CSharp", "tpxxn/algorithm-pattern-CSharp", "C# 版算法模板，LeetCode 刷题与复习指南", "https://github.com/tpxxn/algorithm-pattern-CSharp"],
+      ["📖 Hello 算法", "krahets/hello-algo", "动画图解的数据结构与算法教程，支持 C#", "https://github.com/krahets/hello-algo"],
+      ["📜 代码随想录", "youngyangyang04/leetcode-master", "循序渐进的刷题计划，图文题解", "https://github.com/youngyangyang04/leetcode-master"],
       ["📖 微软 C# 官方文档", "learn.microsoft.com/dotnet/csharp", "C# 语言权威参考与交互式教程", "https://learn.microsoft.com/zh-cn/dotnet/csharp/"],
       ["📖 Unity 官方中文手册", "docs.unity3d.com", "Unity 全量 API 与功能手册（中文）", "https://docs.unity3d.com/cn/current/Manual/index.html"],
       ["🎓 Unity Learn 官方教程", "learn.unity.com", "官方免费 pathway 课程与实战项目", "https://learn.unity.com/"]

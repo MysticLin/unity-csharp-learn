@@ -58,7 +58,7 @@
 
   // ---------- 课程进度 ----------
   S.allLessons = function () {
-    return [window.CSHARP_COURSE, window.UNITY_COURSE].flatMap(c => c.lessons.map(l => Object.assign({ track: c }, l)));
+    return [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE].flatMap(c => c.lessons.map(l => Object.assign({ track: c }, l)));
   };
   S.findLesson = function (id) {
     return S.allLessons().find(l => l.id === id) || S.customVirtual().find(l => l.id === id) || null;
@@ -66,9 +66,10 @@
 
   S.isUnlocked = function (lesson) {
     if (S.freeUnlock) return true;
-    const all = S.allLessons();
-    const i = all.findIndex(l => l.id === lesson.id);
-    return i === 0 || (S.lessons[all[i - 1].id] && S.lessons[all[i - 1].id].done);
+    // 按赛道独立解锁：每条线的第一课始终开放
+    const list = S.allLessons().filter(l => l.track.id === lesson.track.id);
+    const i = list.findIndex(l => l.id === lesson.id);
+    return i === 0 || (S.lessons[list[i - 1].id] && S.lessons[list[i - 1].id].done);
   };
   S.nextLesson = function () {
     return S.allLessons().find(l => !(S.lessons[l.id] && S.lessons[l.id].done)) || null;
