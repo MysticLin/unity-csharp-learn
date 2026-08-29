@@ -84,6 +84,12 @@
     setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 300); }, 1800);
   }
 
+  // 跳转：目标与当前相同时强制重渲染（避免结算页卡住）
+  function go(h) {
+    if (location.hash === h) render();
+    else location.hash = h;
+  }
+
   // 合成音效（无音频文件）
   let audioCtx = null;
   function sfx(kind) {
@@ -434,15 +440,16 @@
     const page = el("div", "page");
     if (!LP) { location.hash = "#/learn/cs"; return; }
 
-    const headLesson = LP.list[0].lesson;          // 复习模式取第一条的所属课
-    const item = LP.review ? LP.list[LP.qi] : null;
-    const lesson = LP.review ? item.lesson : headLesson;
-    const totalSteps = LP.review ? LP.list.length : lesson.qs.length;
+    const headLesson = LP.list[0].lesson;          // 复习/练习模式取第一条的所属课
+    const mixed = LP.review || LP.practice;
+    const item = mixed ? LP.list[LP.qi] : null;
+    const lesson = mixed ? item.lesson : headLesson;
+    const totalSteps = mixed ? LP.list.length : lesson.qs.length;
 
     // 顶部：返回 + 进度
     const top = el("div", "lp-top");
     const back = el("button", "icon-btn", "←");
-    back.onclick = () => location.hash = LP.review ? "#/review" : "#/learn/" + headLesson.track.id;
+    back.onclick = () => go(LP.practice || LP.review ? "#/review" : "#/learn/" + headLesson.track.id);
     top.append(back);
     page.append(top);
 
@@ -484,10 +491,10 @@
     }
 
     if (LP.stage === "quiz") {
-      const q = LP.review ? item.q : lesson.qs[LP.qi];
+      const q = mixed ? item.q : lesson.qs[LP.qi];
       const step = LP.qi + 1;
       page.append(progressBar(step, totalSteps));
-      page.append(el("p", "lp-count muted small", LP.review ? `错题重练 ${step}/${totalSteps}` : `第 ${step} 题 / 共 ${totalSteps} 题`));
+      page.append(el("p", "lp-count muted small", LP.review ? `错题重练 ${step}/${totalSteps}` : LP.practice ? `综合练习 ${step}/${totalSteps}` : `第 ${step} 题 / 共 ${totalSteps} 题`));
       const card = el("div", "card quiz-card");
       card.append(el("h3", "q-title", q.q));
       if (q.code) {
@@ -505,10 +512,11 @@
           if (picked) return;
           picked = true;
           const right = oi === q.a;
+          const noHearts = LP.review || LP.practice;
           if (right) {
             b.classList.add("right"); LP.correct++; LP.streak++;
             sfx("ok");
-            if (LP.review) S.removeWrong(item.lesson.id, item.qi);
+            if (noHearts) S.removeWrong(item.lesson.id, item.qi);
             if (LP.streak >= 5 && S.completeQuest("q2", 10)) toast("🏆 任务达成：连对 5 题 +10 XP");
           } else {
             b.classList.add("wrong");
@@ -516,15 +524,15 @@
             LP.streak = 0;
             sfx("no"); buzz(60);
             if (!LP.review) S.addWrong(lesson.id, LP.qi);
-            if (S.loseHeart() === 0) LP.dead = true;
+            if (!noHearts && S.loseHeart() === 0) LP.dead = true;
           }
           const hNow = S.getHearts();
-          const heartTxt = LP.review || right ? "" : `${hNow}/${S.MAX_HEARTS} ` + "❤️".repeat(hNow) + "🖤".repeat(S.MAX_HEARTS - hNow);
+          const heartTxt = noHearts || right ? "" : `${hNow}/${S.MAX_HEARTS} ` + "❤️".repeat(hNow) + "🖤".repeat(S.MAX_HEARTS - hNow);
           feedback.append(el("p", right ? "fb ok" : "fb no", (right ? "✅ 答对了！ " : "❌ 答错了。 ") + q.ex));
           const last = LP.qi + 1 >= totalSteps;
           const nxt = el("button", "btn primary", last ? "查看结果" : "下一题");
           nxt.onclick = () => {
-            if (!LP.review && S.getHearts() === 0) { showHeartsFail(() => renderLP()); return; }
+            if (!noHearts && S.getHearts() === 0) { showHeartsFail(() => renderLP()); return; }
             if (last) finishQuiz();
             else { LP.qi++; renderLP(); }
           };
@@ -547,15 +555,19 @@
     confetti(card);
     sfx("done"); buzz(30);
     card.append(el("div", "result-emoji", lessonRes.correct === totalSteps ? "🏆" : lessonRes.correct * 2 >= totalSteps ? "🎉" : "💪"));
-    card.append(el("h1", "", lessonRes.correct === totalSteps ? "完美通关！" : "本次训练完成"));
+    card.append(el("h1", "", LP.practice ? "练习完成！" : lessonRes.correct === totalSteps ? "完美通关！" : "本次训练完成"));
     card.append(el("div", "result-xp", "+" + lessonRes.xp + " XP"));
     card.append(el("p", "muted", `答对 ${lessonRes.correct}/${totalSteps} 题` + (lessonRes.first ? " · 首次通关奖励已含" : "")));
+    if (LP.practice) card.append(el("p", "muted small", "🧪 综合练习 · 每答对 1 题 +5 XP，不扣红心"));
     if (LP.review) card.append(el("p", "muted small", "❤️ 错题练习完成，红心已回满"));
     const btns = el("div", "result-btns");
     const again = el("button", "btn ghost", "再练一次");
-    again.onclick = () => { startLesson(LP.result.id, LP.review ? collectReview() : null); };
-    const home = el("button", "btn primary", LP.review ? "返回错题本" : "返回课程");
-    home.onclick = () => location.hash = LP.review ? "#/review" : "#/learn/" + lessonRes.trackId;
+    again.onclick = () => {
+      if (LP.practice) startPractice(LP.result.trackId);
+      else startLesson(LP.result.id, LP.review ? collectReview() : null);
+    };
+    const home = el("button", "btn primary", LP.practice || LP.review ? "返回复习" : "返回课程");
+    home.onclick = () => go((LP.practice || LP.review) ? "#/review" : "#/learn/" + lessonRes.trackId);
     btns.append(again, home);
     card.append(btns);
     page.append(card);
@@ -569,8 +581,13 @@
   }
 
   function finishQuiz() {
-    const total = LP.review ? LP.list.length : LP.list[0].lesson.qs.length;
-    if (LP.review) {
+    const total = LP.review || LP.practice ? LP.list.length : LP.list[0].lesson.qs.length;
+    if (LP.practice) {
+      const xp = LP.correct * 5;
+      S.addXp(xp);
+      S.markToday();
+      LP.result = { correct: LP.correct, xp, practice: true, trackId: LP.trackId };
+    } else if (LP.review) {
       S.refillHearts();
       LP.result = { correct: LP.correct, xp: LP.correct * 5, trackId: "cs", id: null, refilled: true };
     } else {
@@ -655,10 +672,48 @@
     app.replaceChildren(page);
   }
 
+  // ---------- 综合练习 ----------
+  function practicePool(trackId) {
+    let pool = S.allLessons().filter(l => S.lessons[l.id] && S.lessons[l.id].done);
+    if (pool.length < 4) pool = S.allLessons().filter(l => S.isUnlocked(l));
+    if (trackId) pool = pool.filter(l => l.track.id === trackId);
+    const qs = [];
+    pool.forEach(l => l.qs.forEach((q, qi) => qs.push({ lesson: l, q, qi })));
+    for (let i = qs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [qs[i], qs[j]] = [qs[j], qs[i]];
+    }
+    return qs.slice(0, 8);
+  }
+
+  function startPractice(trackId) {
+    const list = practicePool(trackId);
+    if (list.length < 4) return toast("已学题目还不够，先去闯几关吧");
+    LP = { practice: true, review: false, trackId: trackId || null, list, qi: 0, stage: "quiz", correct: 0, streak: 0 };
+    renderLP();
+  }
+
   // ---------- 错题本 ----------
   function renderReview() {
     const page = el("div", "page");
-    page.append(el("h1", "", "错题重练"));
+    page.append(el("h1", "", "复习与练习"));
+    page.append(el("p", "sub muted", "错题消灭 + 随机混考，双管齐下记得牢。"));
+
+    // 综合练习
+    const prac = el("div", "card form-card");
+    prac.append(el("h3", "", "🧪 综合练习"));
+    prac.append(el("p", "muted small", "从已学课程随机抽 8 题混考：答对每题 +5 XP，不扣红心，答错自动进错题本。"));
+    const prow = el("div", "btn-row wrap");
+    [["🌈 全部", null], ["🎯 C#", "cs"], ["🎮 Unity", "u"], ["🧮 算法", "algo"]].forEach(([txt, tid]) => {
+      const b = el("button", "btn accent tiny", txt);
+      b.onclick = () => startPractice(tid);
+      prow.append(b);
+    });
+    prac.append(prow);
+    page.append(prac);
+
+    // 错题本
+    page.append(sectionTitle("🔁 错题本"));
     const list = S.wrongList();
     const card = el("div", "card review-card");
     card.append(el("div", "result-emoji", list.length ? "🔁" : "🌈"));

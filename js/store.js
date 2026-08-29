@@ -112,7 +112,13 @@
 
   // ---------- 课程进度 ----------
   S.allLessons = function () {
-    return [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE].flatMap(c => c.lessons.map(l => Object.assign({ track: c }, l)));
+    const extra = window.EXTRA_QS || {};
+    return [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE].flatMap(c =>
+      c.lessons.map(l => {
+        const ex = extra[l.id];
+        return Object.assign({ track: c }, l, ex ? { qs: l.qs.concat(ex) } : null);
+      })
+    );
   };
   S.findLesson = function (id) {
     return S.allLessons().find(l => l.id === id) || S.customVirtual().find(l => l.id === id) || null;
