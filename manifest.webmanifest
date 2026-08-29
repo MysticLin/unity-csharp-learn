@@ -1,0 +1,11 @@
+{
+  "name": "Unity & C# 训练营",
+  "short_name": "UC训练营",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#58cc02",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
