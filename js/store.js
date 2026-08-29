@@ -9,6 +9,7 @@
     lessons: {},         // lessonId: { done, score, date }
     wrong: {},           // qkey: { lessonId, qi }
     schedule: [],        // { id, title, cat, wd, time, note, pdf:{id,name}|null }
+    customTracks: [],    // 自建课程包 { id, name, emoji, lessons:[{id,title,blocks:[...]}] }
     goal: 2,             // 每日目标：完成 N 节课
     freeUnlock: false
   };
@@ -59,7 +60,9 @@
   S.allLessons = function () {
     return [window.CSHARP_COURSE, window.UNITY_COURSE].flatMap(c => c.lessons.map(l => Object.assign({ track: c }, l)));
   };
-  S.findLesson = function (id) { return S.allLessons().find(l => l.id === id); };
+  S.findLesson = function (id) {
+    return S.allLessons().find(l => l.id === id) || S.customVirtual().find(l => l.id === id) || null;
+  };
 
   S.isUnlocked = function (lesson) {
     if (S.freeUnlock) return true;
@@ -106,6 +109,60 @@
     return S.schedule.filter(c => c.wd === wd).sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
   };
   S.coursesToday = function () { return S.coursesAt(S.weekday()); };
+
+  // ---------- 自建课程 ----------
+  S.addTrack = function (name, emoji) {
+    const t = { id: S.uuid(), name, emoji: emoji || "📗", lessons: [] };
+    S.customTracks.push(t); save(); return t;
+  };
+  S.removeTrack = function (id) { S.customTracks = S.customTracks.filter(t => t.id !== id); save(); };
+  S.getTrack = function (id) { return S.customTracks.find(t => t.id === id) || null; };
+  S.addCustomLesson = function (trackId, lesson) {
+    const t = S.getTrack(trackId); if (!t) return null;
+    lesson.id = "L" + S.uuid(); t.lessons.push(lesson); save(); return lesson;
+  };
+  S.removeCustomLesson = function (trackId, lessonId) {
+    const t = S.getTrack(trackId); if (!t) return;
+    t.lessons = t.lessons.filter(l => l.id !== lessonId); save();
+  };
+  // 把自建课程映射成与内置课程同构的"虚拟课程"，让答题/错题本/进度体系通用
+  S.customVirtual = function () {
+    return S.customTracks.flatMap(t => t.lessons.map(l => ({
+      id: "x_" + l.id, trackId: t.id, lessonId: l.id, title: l.title, blocks: l.blocks, kps: null,
+      track: { id: "x", title: t.name, emoji: t.emoji },
+      qs: l.blocks.filter(b => b.t === "quiz").map(b => ({ q: b.q, opts: b.opts, a: b.a, ex: b.ex || "" }))
+    })));
+  };
+  S.completeCustom = function (lessonId) {
+    const key = "x_" + lessonId;
+    const first = !(S.lessons[key] && S.lessons[key].done);
+    S.lessons[key] = { done: true, score: 100, date: today() };
+    if (first) S.xp += 15;
+    S.markToday(); save();
+    return first ? 15 : 0;
+  };
+
+  // ---------- 备份导出 / 导入 ----------
+  S.exportData = function () {
+    return JSON.stringify({
+      app: "unity-csharp-learn", v: 1, exportedAt: new Date().toISOString(),
+      xp: S.xp, streak: S.streak, days: S.days, lessons: S.lessons, wrong: S.wrong,
+      schedule: S.schedule, goal: S.goal, freeUnlock: S.freeUnlock, customTracks: S.customTracks
+    });
+  };
+  S.importData = function (json) {
+    const d = JSON.parse(json);
+    S.xp = d.xp || 0;
+    S.streak = d.streak || { last: null, count: 0 };
+    S.days = d.days || {};
+    S.lessons = d.lessons || {};
+    S.wrong = d.wrong || {};
+    S.schedule = d.schedule || [];
+    S.goal = d.goal || 2;
+    S.freeUnlock = !!d.freeUnlock;
+    S.customTracks = d.customTracks || [];
+    save();
+  };
 
   // ---------- IndexedDB: PDF 附件 ----------
   const DB_NAME = "uc_files", STORE = "pdfs";

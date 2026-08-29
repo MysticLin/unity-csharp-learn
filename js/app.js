@@ -149,26 +149,35 @@
     return card;
   }
 
-  async function openPdf(id) {
+  async function openMedia(id, name, kind) {
     try {
       const rec = await S.getPdf(id);
-      if (!rec) return toast("找不到 PDF 文件");
+      if (!rec) return toast("找不到文件");
       const url = URL.createObjectURL(rec.blob);
       const modal = el("div", "modal");
       const box = el("div", "modal-box pdf-box");
       const bar = el("div", "modal-bar");
-      bar.append(el("span", "modal-title", "📄 " + rec.name));
+      bar.append(el("span", "modal-title", "📄 " + (rec.name || name)));
       const close = el("button", "btn tiny", "关闭");
       close.onclick = () => { URL.revokeObjectURL(url); modal.remove(); };
       bar.append(close);
-      const frame = el("iframe", "pdf-frame");
-      frame.src = url;
+      let frame;
+      if (kind === "video") {
+        frame = el("video", "pdf-frame");
+        frame.controls = true;
+        frame.src = url;
+      } else {
+        frame = el("iframe", "pdf-frame");
+        frame.src = url;
+      }
       box.append(bar, frame);
       modal.append(box);
       modal.onclick = (e) => { if (e.target === modal) { URL.revokeObjectURL(url); modal.remove(); } };
       document.body.appendChild(modal);
     } catch (e) { toast("打开失败：" + e); }
   }
+
+  async function openPdf(id) { return openMedia(id, "", "pdf"); }
 
   // ---------- 课程列表 ----------
   function renderLearn(trackId) {
@@ -229,11 +238,10 @@
       review: !!reviewList,
       list: reviewList || [{ lesson, q: null }],  // review: [{lesson,q,qi}]
       qi: 0,
-      stage: "cards",
+      stage: (reviewList || (lesson && !lesson.kps)) ? "quiz" : "cards",
       correct: 0,
       answered: false
     };
-    if (LP.review) LP.stage = "quiz";
     renderLP();
   }
 
@@ -459,6 +467,417 @@
     app.replaceChildren(page);
   }
 
+  // ---------- 我的课程（自建内容） ----------
+  const BLOCK_KINDS = { text: "📝 文字", code: "💻 代码", video: "🎬 视频", link: "🔗 链接", quiz: "❓ 自测题" };
+  let builder = null;      // { trackId, title, blocks: [] }
+  let importInput = null;
+
+  function parseVideo(url) {
+    url = (url || "").trim();
+    let m;
+    if ((m = url.match(/bilibili\.com\/video\/(BV\w+)/i)) || (m = url.match(/^(BV\w+)$/i)))
+      return { type: "iframe", src: "https://player.bilibili.com/player.html?bvid=" + m[1] + "&autoplay=0" };
+    if ((m = url.match(/youtube\.com\/watch\?v=([\w-]+)/i)) || (m = url.match(/youtu\.be\/([\w-]+)/i)))
+      return { type: "iframe", src: "https://www.youtube.com/embed/" + m[1] };
+    if (/^https?:\/\/.+\.(mp4|webm|m4v|mov)(\?|#|$)/i.test(url)) return { type: "file", src: url };
+    if (/^https?:\/\//.test(url)) return { type: "iframe", src: url };
+    return null;
+  }
+
+  function copyText(text, btn) {
+    const ok = () => { btn.textContent = "✅ 已复制"; setTimeout(() => btn.textContent = "复制", 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok).catch(() => fallback());
+    } else fallback();
+    function fallback() {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); ok(); } catch (e) { toast("复制失败，请手动复制"); }
+      ta.remove();
+    }
+  }
+
+  function renderCustom(trackId, lessonId) {
+    if (trackId && lessonId) return renderCustomLesson(trackId, lessonId);
+    if (trackId) return renderTrackDetail(trackId);
+    return renderCustomHome();
+  }
+
+  function renderCustomHome() {
+    const page = el("div", "page");
+    page.append(el("h1", "", "我的课程"));
+    page.append(el("p", "sub muted", "想学什么自己加：文字、代码、视频、链接和自测题，内容保存在本设备。"));
+
+    // 新建课程包
+    const form = el("div", "card form-card");
+    const name = el("input"); name.placeholder = "课程包名称，如：Three.js 入门";
+    const emoji = el("input"); emoji.placeholder = "图标（一个 emoji，默认 📗）"; emoji.maxLength = 4;
+    const add = el("button", "btn primary big", "＋ 新建课程包");
+    add.onclick = () => {
+      if (!name.value.trim()) return toast("先给课程包起个名字");
+      const t = S.addTrack(name.value.trim(), emoji.value.trim() || "📗");
+      toast("已创建 ✅");
+      location.hash = "#/custom/" + t.id;
+    };
+    form.append(el("h3", "", "新建课程包"), name, emoji, add);
+    page.append(form);
+
+    // 课程包列表
+    if (S.customTracks.length) {
+      page.append(sectionTitle("📚 已有课程包"));
+      S.customTracks.forEach(t => {
+        const card = el("div", "card course-item");
+        const main = el("div", "ci-main");
+        main.style.cursor = "pointer";
+        main.onclick = () => location.hash = "#/custom/" + t.id;
+        const top = el("div", "ci-top");
+        top.append(el("span", "badge", `${t.emoji} ${t.name}`));
+        top.append(el("span", "ci-time", `${t.lessons.length} 节课`));
+        main.append(top);
+        main.append(el("h4", "", t.name));
+        const doneN = t.lessons.filter(l => { const r = S.lessons["x_" + l.id]; return r && r.done; }).length;
+        main.append(el("p", "muted small", `已完成 ${doneN}/${t.lessons.length}`));
+        card.append(main);
+        const del = el("button", "icon-btn", "🗑");
+        del.onclick = (e) => {
+          e.stopPropagation();
+          if (confirm(`删除课程包「${t.name}」及其全部课程？`)) { S.removeTrack(t.id); toast("已删除"); render(); }
+        };
+        card.append(del);
+        page.append(card);
+      });
+    } else {
+      page.append(el("div", "card empty", "还没有自建课程，先新建一个课程包吧～"));
+    }
+
+    // 数据管理
+    const data = el("div", "card form-card");
+    data.append(el("h3", "", "数据备份"));
+    const row = el("div", "btn-row");
+    const exp = el("button", "btn accent", "⬇ 导出备份");
+    exp.onclick = () => {
+      const blob = new Blob([S.exportData()], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "uclearn-backup-" + S.today() + ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      toast("备份已下载 ✅");
+    };
+    const imp = el("button", "btn ghost", "⬆ 导入备份");
+    imp.onclick = () => {
+      if (!importInput) {
+        importInput = el("input"); importInput.type = "file"; importInput.accept = ".json,application/json";
+        importInput.style.display = "none";
+        importInput.onchange = () => {
+          const f = importInput.files[0]; if (!f) return;
+          const r = new FileReader();
+          r.onload = () => {
+            try {
+              JSON.parse(r.result);
+            } catch (e) { return toast("文件不是有效的备份"); }
+            if (!confirm("导入会覆盖当前的学习进度和自建课程，继续？")) return;
+            S.importData(r.result);
+            toast("导入成功 ✅");
+            render();
+          };
+          r.readAsText(f);
+        };
+        document.body.appendChild(importInput);
+      }
+      importInput.click();
+    };
+    row.append(exp, imp);
+    data.append(row);
+    data.append(el("p", "muted small", "备份包含进度、课表与自建课程；PDF/视频附件体积大，不参与备份，需重新上传。"));
+    page.append(data);
+
+    // 资源入口
+    const res = el("div", "card course-item");
+    const rm = el("div", "ci-main"); rm.style.cursor = "pointer";
+    rm.onclick = () => location.hash = "#/resources";
+    rm.append(el("h4", "", "🌐 GitHub 学习资源"));
+    rm.append(el("p", "muted small", "精选开源教程仓库与官方文档"));
+    res.append(rm);
+    page.append(res);
+    app.replaceChildren(page);
+  }
+
+  function renderTrackDetail(tid) {
+    const track = S.getTrack(tid);
+    if (!track) { location.hash = "#/custom"; return; }
+    const page = el("div", "page");
+    const head = el("div", "lp-top");
+    const back = el("button", "icon-btn", "←");
+    back.onclick = () => location.hash = "#/custom";
+    head.append(back);
+    page.append(head);
+    page.append(el("h1", "", `${track.emoji} ${track.name}`));
+    page.append(el("p", "sub muted", "点击课程开始学习；用下方编辑器添加新课程。"));
+
+    // 课程列表
+    if (track.lessons.length) {
+      track.lessons.forEach(l => {
+        const rec = S.lessons["x_" + l.id];
+        const card = el("div", "card course-item");
+        const main = el("div", "ci-main");
+        main.style.cursor = "pointer";
+        main.onclick = () => location.hash = `#/custom/${tid}/${l.id}`;
+        const top = el("div", "ci-top");
+        top.append(el("span", "badge", rec && rec.done ? "✅ 已学" : "未学"));
+        const icons = l.blocks.map(b => BLOCK_KINDS[b.t][0]).join(" ");
+        if (icons) top.append(el("span", "ci-time", icons));
+        main.append(top);
+        main.append(el("h4", "", l.title));
+        main.append(el("p", "muted small", l.blocks.length + " 个内容模块"));
+        card.append(main);
+        const del = el("button", "icon-btn", "🗑");
+        del.onclick = (e) => {
+          e.stopPropagation();
+          if (confirm(`删除课程「${l.title}」？`)) { S.removeCustomLesson(tid, l.id); toast("已删除"); render(); }
+        };
+        card.append(del);
+        page.append(card);
+      });
+    } else {
+      page.append(el("div", "card empty", "这个课程包还是空的，添加第一节课程吧～"));
+    }
+
+    // 编辑器
+    if (builder && builder.trackId === tid) page.append(renderBuilder(tid));
+    else {
+      const newBtn = el("button", "btn primary big", "＋ 添加一节课");
+      newBtn.onclick = () => { builder = { trackId: tid, title: "", blocks: [newBlock("text")] }; render(); };
+      page.append(newBtn);
+    }
+    app.replaceChildren(page);
+  }
+
+  function newBlock(type) {
+    const base = { t: type };
+    if (type === "text") Object.assign(base, { title: "", body: "" });
+    if (type === "code") Object.assign(base, { title: "", code: "" });
+    if (type === "video") Object.assign(base, { url: "", blobId: null, name: "" });
+    if (type === "link") Object.assign(base, { url: "", label: "" });
+    if (type === "quiz") Object.assign(base, { q: "", opts: ["", "", "", ""], a: 0, ex: "" });
+    return base;
+  }
+
+  function renderBuilder(tid) {
+    const card = el("div", "card form-card builder");
+    card.append(el("h3", "", "✏️ 编辑新课程"));
+    const title = el("input");
+    title.placeholder = "课程标题，如：第一节 · 变量与类型";
+    title.value = builder.title;
+    title.oninput = () => builder.title = title.value;
+    card.append(title);
+
+    builder.blocks.forEach((b, i) => {
+      const bc = el("div", "block-editor");
+      const head = el("div", "block-head");
+      const sel = el("select");
+      Object.entries(BLOCK_KINDS).forEach(([k, v]) => { const o = el("option", "", v); o.value = k; if (k === b.t) o.selected = true; sel.append(o); });
+      sel.onchange = () => { builder.blocks[i] = newBlock(sel.value); render(); };
+      const rm = el("button", "icon-btn", "✖");
+      rm.onclick = () => { builder.blocks.splice(i, 1); render(); };
+      head.append(sel, rm);
+      bc.append(head);
+
+      const inp = (placeholder, val, cb, ta) => {
+        const e = ta ? document.createElement("textarea") : el("input");
+        if (ta) e.rows = 3;
+        e.placeholder = placeholder;
+        e.value = val || "";
+        e.oninput = () => cb(e.value);
+        return e;
+      };
+
+      if (b.t === "text") {
+        bc.append(inp("小标题（可选）", b.title, v => b.title = v));
+        bc.append(inp("正文内容", b.body, v => b.body = v, true));
+      } else if (b.t === "code") {
+        bc.append(inp("代码说明（可选）", b.title, v => b.title = v));
+        bc.append(inp("粘贴代码", b.code, v => b.code = v, true));
+      } else if (b.t === "video") {
+        const fileLabel = el("label", "pdf-label", b.blobId ? "🎬 已选本地视频：" + b.name + "（点击更换）" : "🎬 上传本地视频文件（mp4/webm，最大 200MB，点击选择）");
+        const file = el("input"); file.type = "file"; file.accept = "video/mp4,video/webm,video/mp4";
+        file.style.display = "none";
+        file.onchange = () => {
+          const f = file.files[0]; if (!f) return;
+          if (f.size > 200 * 1024 * 1024) { toast("视频不能超过 200MB"); return; }
+          b._file = f; b.blobId = null; b.name = f.name;
+          fileLabel.textContent = "🎬 已选本地视频：" + f.name + "（保存时上传）";
+        };
+        fileLabel.onclick = () => file.click();
+        bc.append(inp("视频链接：B站BV号/链接、YouTube 链接或 mp4 直链", b.url, v => b.url = v));
+        bc.append(el("p", "muted small", "填了链接就不用上传文件；二选一即可。B站视频请在 App 里点「分享→复制链接」后粘贴。"));
+        bc.append(file, fileLabel);
+      } else if (b.t === "link") {
+        bc.append(inp("网址 https://...", b.url, v => b.url = v));
+        bc.append(inp("显示名称（可选）", b.label, v => b.label = v));
+      } else if (b.t === "quiz") {
+        bc.append(inp("问题", b.q, v => b.q = v, true));
+        b.opts.forEach((o, oi) => {
+          bc.append(inp(`选项 ${String.fromCharCode(65 + oi)}`, o, v => b.opts[oi] = v));
+        });
+        const ans = el("select");
+        b.opts.forEach((_, oi) => { const o = el("option", "", "正确答案：" + String.fromCharCode(65 + oi)); o.value = String(oi); if (b.a === oi) o.selected = true; ans.append(o); });
+        ans.onchange = () => b.a = Number(ans.value);
+        bc.append(ans);
+        bc.append(inp("解析（选填）", b.ex, v => b.ex = v));
+      }
+      card.append(bc);
+    });
+
+    // 添加模块按钮
+    const addRow = el("div", "btn-row wrap");
+    Object.entries(BLOCK_KINDS).forEach(([k, v]) => {
+      const btn = el("button", "btn ghost tiny", "＋ " + v);
+      btn.onclick = () => { builder.blocks.push(newBlock(k)); render(); };
+      addRow.append(btn);
+    });
+    card.append(addRow);
+
+    const save = el("button", "btn primary big", "💾 保存课程");
+    save.onclick = async () => {
+      if (!builder.title.trim()) return toast("请填写课程标题");
+      if (!builder.blocks.length) return toast("至少添加一个内容模块");
+      const blocks = [];
+      for (const b of builder.blocks) {
+        const c = Object.assign({}, b);
+        delete c._file;
+        if (b.t === "video" && b._file) {
+          const pid = "vid_" + S.uuid();
+          await S.savePdf({ id: pid, name: b._file.name, blob: b._file });
+          c.blobId = pid; c.name = b._file.name; c.url = "";
+        }
+        blocks.push(c);
+      }
+      S.addCustomLesson(tid, { title: builder.title.trim(), blocks });
+      builder = null;
+      toast("课程已保存 ✅");
+      render();
+    };
+    const cancel = el("button", "btn ghost big", "取消");
+    cancel.onclick = () => { builder = null; render(); };
+    card.append(save, cancel);
+    return card;
+  }
+
+  function renderCustomLesson(tid, lid) {
+    const track = S.getTrack(tid);
+    const lesson = track && track.lessons.find(l => l.id === lid);
+    if (!lesson) { location.hash = "#/custom/" + tid; return; }
+    const page = el("div", "page");
+    const head = el("div", "lp-top");
+    const back = el("button", "icon-btn", "←");
+    back.onclick = () => location.hash = "#/custom/" + tid;
+    head.append(back);
+    page.append(head);
+    page.append(el("h1", "", lesson.title));
+    page.append(el("p", "sub muted", `${track.emoji} ${track.name} · ${lesson.blocks.length} 个模块`));
+
+    const quizBlocks = lesson.blocks.filter(b => b.t === "quiz");
+    let quizCorrect = 0;
+
+    lesson.blocks.forEach(b => {
+      if (b.t === "text") {
+        const card = el("div", "card kp");
+        card.append(el("h3", "", b.title || "📝 笔记"));
+        card.append(el("p", "kp-desc prewrap", b.body));
+        page.append(card);
+      } else if (b.t === "code") {
+        const card = el("div", "card kp");
+        const row = el("div", "code-row");
+        row.append(el("h3", "", b.title || "💻 代码"));
+        const cp = el("button", "btn tiny ghost", "复制");
+        cp.onclick = () => copyText(b.code, cp);
+        row.append(cp);
+        card.append(row);
+        const pre = el("pre", "code");
+        pre.append(el("code", "", b.code));
+        card.append(pre);
+        page.append(card);
+      } else if (b.t === "video") {
+        const card = el("div", "card");
+        card.append(el("h3", "", "🎬 视频"));
+        if (b.blobId) {
+          const btn = el("button", "btn accent big", "▶ 播放本地视频：" + b.name);
+          btn.onclick = () => openMedia(b.blobId, b.name, "video");
+          card.append(btn);
+        } else {
+          const v = parseVideo(b.url);
+          if (!v) {
+            card.append(el("p", "muted small", "视频链接无效，请编辑后重新填写。"));
+          } else if (v.type === "file") {
+            const video = el("video", "video-file");
+            video.controls = true;
+            video.src = v.src;
+            video.style.width = "100%";
+            card.append(video);
+          } else {
+            const wrap = el("div", "video-wrap");
+            const ifr = el("iframe");
+            ifr.src = v.src;
+            ifr.allowFullscreen = true;
+            ifr.setAttribute("allowfullscreen", "");
+            wrap.append(ifr);
+            const vrow = el("div", "btn-row");
+            const openBtn = el("a", "btn tiny ghost", "↗ 新窗口打开视频");
+            openBtn.href = b.url.startsWith("http") ? b.url : "https://www.bilibili.com/video/" + b.url;
+            openBtn.target = "_blank"; openBtn.rel = "noopener";
+            openBtn.style.textDecoration = "none";
+            vrow.append(openBtn);
+            card.append(wrap, vrow);
+            card.append(el("p", "muted small", "若内嵌视频无法播放，点上面的按钮到平台观看。"));
+          }
+        }
+        page.append(card);
+      } else if (b.t === "link") {
+        const a = el("a", "card res-card");
+        a.href = b.url; a.target = "_blank"; a.rel = "noopener";
+        a.append(el("h4", "", "🔗 " + (b.label || b.url)));
+        a.append(el("p", "muted small", b.url));
+        page.append(a);
+      } else if (b.t === "quiz") {
+        const card = el("div", "card quiz-card");
+        card.append(el("h3", "q-title", b.q));
+        const opts = el("div", "opts");
+        const feedback = el("div", "feedback");
+        const qi = quizBlocks.indexOf(b);
+        let picked = false;
+        b.opts.forEach((opt, oi) => {
+          if (!opt) return;
+          const btn = el("button", "opt");
+          btn.append(el("span", "opt-key", String.fromCharCode(65 + oi)), el("span", "opt-text", opt));
+          btn.onclick = () => {
+            if (picked) return;
+            picked = true;
+            const right = oi === b.a;
+            if (right) { btn.classList.add("right"); quizCorrect++; S.removeWrong("x_" + lesson.id, qi); }
+            else { btn.classList.add("wrong"); opts.children[b.a].classList.add("right"); S.addWrong("x_" + lesson.id, qi); }
+            feedback.append(el("p", right ? "fb ok" : "fb no", (right ? "✅ 答对了！ " : "❌ 答错了。 ") + (b.ex || "")));
+            [...opts.children].forEach(c => c.disabled = true);
+          };
+          opts.append(btn);
+        });
+        card.append(opts, feedback);
+        page.append(card);
+      }
+    });
+
+    const done = el("button", "btn primary big", "✅ 完成本次学习 (+15 XP)");
+    const rec = S.lessons["x_" + lesson.id];
+    if (rec && rec.done) done.textContent = "✅ 已完成（可重复学习）";
+    done.onclick = () => {
+      const xp = S.completeCustom(lesson.id);
+      toast(xp ? `完成！+${xp} XP ⚡` : "已记录，温故而知新 📖");
+      location.hash = "#/custom/" + tid;
+    };
+    page.append(done);
+    app.replaceChildren(page);
+  }
+
   // ---------- 资源 ----------
   function renderResources() {
     const page = el("div", "page");
@@ -494,10 +913,11 @@
       case "schedule": renderSchedule(); break;
       case "review": renderReview(); break;
       case "resources": renderResources(); break;
+      case "custom": renderCustom(parts[1], parts[2]); break;
       default: renderHome();
     }
     // 底栏高亮
-    const map = { "": "home", learn: "learn", lesson: "learn", schedule: "schedule", review: "review", resources: "resources" };
+    const map = { "": "home", learn: "learn", lesson: "learn", schedule: "schedule", review: "review", resources: "resources", custom: "custom" };
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === map[parts[0]]));
   }
   function render() { route(); }
@@ -505,12 +925,12 @@
 
   // 底部导航
   const nav = document.getElementById("nav");
-  const items = [["home", "🏠", "今日"], ["learn", "📚", "课程"], ["schedule", "🗓️", "课表"], ["review", "🔁", "复习"], ["resources", "🌐", "资源"]];
+  const items = [["home", "🏠", "今日"], ["learn", "📚", "课程"], ["schedule", "🗓️", "课表"], ["review", "🔁", "复习"], ["custom", "🗂️", "我的"]];
   items.forEach(([k, e, t]) => {
     const b = el("button", "nav-btn", "");
     b.dataset.page = k;
     b.append(el("span", "nav-emoji", e), el("span", "nav-txt", t));
-    b.onclick = () => location.hash = { home: "#/", learn: "#/learn/cs", schedule: "#/schedule", review: "#/review", resources: "#/resources" }[k];
+    b.onclick = () => location.hash = { home: "#/", learn: "#/learn/cs", schedule: "#/schedule", review: "#/review", custom: "#/custom" }[k];
     nav.append(b);
   });
 
