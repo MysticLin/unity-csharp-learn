@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 global.window = {};
-for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js/data/extra-qs.js", "js/data/extra-qs2.js", "js/data/extra-qs3.js", "js/data/extra-qs4.js", "js/data/extra-qs5.js", "js/data/extra-qs6.js", "js/data/extra-qs6b.js", "js/data/extra-qs7.js"]) {
+for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js/data/patterns.js", "js/data/extra-qs.js", "js/data/extra-qs2.js", "js/data/extra-qs3.js", "js/data/extra-qs4.js", "js/data/extra-qs5.js", "js/data/extra-qs6.js", "js/data/extra-qs6b.js", "js/data/extra-qs7.js"]) {
   readFileSync(join(root, f), "utf8");
   // 以 require 方式执行（它们是普通脚本）
   new Function("window", readFileSync(join(root, f), "utf8"))(global.window);
@@ -15,7 +15,7 @@ for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js
 
 const W = global.window;
 const extra1 = W.EXTRA_QS || {}, extra2 = W.EXTRA_QS2 || {}, extra3 = W.EXTRA_QS3 || {}, extra4 = W.EXTRA_QS4 || {}, extra5 = W.EXTRA_QS5 || {}, extra6 = W.EXTRA_QS6 || {}, extra6b = W.EXTRA_QS6B || {}, extra7 = W.EXTRA_QS7 || {};
-const tracks = [W.CSHARP_COURSE, W.UNITY_COURSE, W.ALGO_COURSE];
+const tracks = [W.CSHARP_COURSE, W.UNITY_COURSE, W.ALGO_COURSE, W.PATTERNS_COURSE].filter(Boolean);
 
 // 合并后的全部题目（与 store.js 的合并逻辑一致）
 const all = [];
@@ -160,7 +160,12 @@ const sims = {
   "t7_a": () => "约 " + Math.ceil(Math.log2(1e6)) + " 次",
   "t7_b": () => "O(n × m)",
   "t7_c": () => { const a = [0, 1, 0, 3]; const nz = a.filter(v => v !== 0); while (nz.length < a.length) nz.push(0); return "{" + nz.join(", ") + "}"; },
-  "t7_d": () => { let bal = 0, valid = true; for (const c of "(()())") { bal += c === "(" ? 1 : -1; if (bal < 0) valid = false; } return valid && bal === 0 ? "有效（深度轨迹 1,2,1,2,1,0 归零）" : "无效"; }
+  "t7_d": () => { let bal = 0, valid = true; for (const c of "(()())") { bal += c === "(" ? 1 : -1; if (bal < 0) valid = false; } return valid && bal === 0 ? "有效（深度轨迹 1,2,1,2,1,0 归零）" : "无效"; },
+  // --- 设计模式专题 ---
+  "t8_1": () => "Chase",
+  "t8_2": () => "创建 3 个，激活 3 个",
+  "t8_3": () => "ab（C 被撤销）",
+  "t8_4": () => "拾取→逻辑层加分→事件广播→UI 层订阅刷新"
 };
 
 // ---- 可执行题校验 ----

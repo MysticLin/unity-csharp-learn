@@ -277,10 +277,10 @@
     quick.append(
       q("🎯", "C# 基础", "从变量到 LINQ", "#/learn/cs"),
       q("🎮", "Unity 核心", "从编辑器到实战", "#/learn/u"),
-      q("🧮", "算法题库", "10 专题 50 题", "#/learn/algo"),
-      q("🗂️", "我的课程", "自建学习内容", "#/custom"),
+      q("🧮", "算法题库", "10 专题 100 题", "#/learn/algo"),
+      q("🏗️", "设计模式", "游戏架构套路", "#/learn/dp"),
       q("🔁", "错题重练", `错题 ${Object.keys(S.wrong).length} 道`, "#/review"),
-      q("🌐", "GitHub 资源", "更多学习仓库", "#/resources")
+      q("🗂️", "我的课程", "自建学习内容", "#/custom")
     );
     page.append(quick);
     app.replaceChildren(page);
@@ -357,14 +357,14 @@
     page.append(el("p", "sub muted", "按顺序闯关：完成上一课自动解锁下一课。学完知识点后答题，全部课程共 " + S.allLessons().length + " 节。"));
 
     const tabs = el("div", "tabs");
-    [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE].forEach(c => {
+    [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE, window.PATTERNS_COURSE].forEach(c => {
       const t = el("button", "tab" + (c.id === trackId ? " active" : ""), `${c.emoji} ${c.short}`);
       t.onclick = () => { location.hash = "#/learn/" + c.id; };
       tabs.append(t);
     });
     page.append(tabs);
 
-    const course = trackId === "cs" ? window.CSHARP_COURSE : trackId === "u" ? window.UNITY_COURSE : window.ALGO_COURSE;
+    const course = trackId === "cs" ? window.CSHARP_COURSE : trackId === "u" ? window.UNITY_COURSE : trackId === "algo" ? window.ALGO_COURSE : window.PATTERNS_COURSE;
     const info = el("div", "card track-info");
     info.append(el("h3", "", `${course.emoji} ${course.title}`), el("p", "muted small", course.desc));
     const doneN = course.lessons.filter(l => S.lessons[l.id] && S.lessons[l.id].done).length;
