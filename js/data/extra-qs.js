@@ -8,10 +8,10 @@ window.EXTRA_QS = {
     { q: "$\"总分：{a + b}\"（a=3, b=4）的结果是？", opts: ["总分：7", "总分：a + b", "总分：34", "编译错误"], a: 0, ex: "插值的花括号里可以放任意表达式，先求值再嵌入字符串。" }
   ],
   cs3: [
-    { q: "以下代码打印几个 * ？", code: "for (int i = 0; i < 10; i++) {\n    if (i % 2 == 0) continue;\n    if (i == 8) break;\n    Debug.Log(\"*\");\n}", opts: ["3 个", "4 个", "5 个", "8 个"], a: 1, ex: "continue 跳过偶数，i 取 1,3,5,7 时打印（到 8 时 break），共 4 个。" }
+    { q: "以下代码打印几个 * ？", code: "for (int i = 0; i < 10; i++) {\n    if (i % 2 == 0) continue;\n    if (i == 8) break;\n    Debug.Log(\"*\");\n}", opts: ["3 个", "4 个", "5 个", "8 个"], a: 2, ex: "i==8 的 break 是死代码：8 是偶数，会先被 continue 跳过，永远轮不到 break。打印的是奇数 1,3,5,7,9，共 5 个。顺序很重要——break 写在 continue 后面就失效了。" }
   ],
   cs4: [
-    { q: "以下代码输出？", code: "var list = new List<int> { 10, 20, 30 };\nlist.Insert(1, 15);\nlist.RemoveAt(0);\nDebug.Log(list[0] + \",\" + list.Count);", opts: ["10,3", "15,3", "15,2", "10,2"], a: 2, ex: "插入后 {10,15,30}，删下标 0 → {15,30}，list[0]=15、Count=2。" }
+    { q: "以下代码输出？（提示：Insert(下标, 值) 是插入挤位，不是替换）", code: "var list = new List<int> { 10, 20, 30 };\nlist.Insert(1, 15);\nlist.RemoveAt(0);\nDebug.Log(list[0] + \",\" + list.Count);", opts: ["10,3", "15,3", "15,2", "10,2"], a: 1, ex: "Insert 是插入不是替换：{10,20,30} → {10,15,20,30}（4 个）；RemoveAt(0) 删下标 0 的 10 → {15,20,30}，list[0]=15、Count=3。想替换某位置要用 list[1] = 15，那样才会是 15,2。" }
   ],
   cs5: [
     { q: "以下方法（hp 已是成员变量）哪些调用方式正确？", code: "void Heal(int amount = 10) {\n    hp += amount;\n}", opts: ["Heal();", "Heal(30);", "两种都可以", "都不行"], a: 2, ex: "可选参数有默认值：不传用 10，传了用传入值。" }

@@ -68,10 +68,11 @@ window.KP_DETAILS = {
   cs4_1: {
     more: [
       "List<T> 内部也是数组，容量不够时自动扩容（翻倍复制）。能预估大小时 new List<T>(1000) 预分配容量，可避免反复扩容产生的 GC 压力——Unity 里 GC 卡顿就是性能杀手。",
+      "Insert(下标, 值) 是\"插入挤位\"：新元素放进指定下标，后面的元素整体后移一位；想覆盖某个位置是 list[下标] = 值，长度不变。两者别混。",
       "常用方法速记：Add 加、Remove 按对象删、RemoveAt 按下标删、Insert 插入、Contains 是否包含、IndexOf 找位置、Sort 排序、Clear 清空。",
       "Remove 是 O(n)（要移动后续元素），高频删除场景考虑 HashSet（无序）或 LinkedList；倒序遍历删除是 List 的经典姿势。"
     ],
-    pit: "遍历时 foreach 里 Remove 会直接抛异常；另外 Count 是个数，Length 是数组用的，混写会编译错误。",
+    pit: "遍历时 foreach 里 Remove 会直接抛异常；另外 Count 是个数，Length 是数组用的，混写会编译错误。还有一对容易看混的方法：Remove(值) 按值删、RemoveAt(下标) 按下标删，做题和写码都盯准方法名。",
     tip: "背包、敌人波次、技能冷却列表全用 List<T>；成员固定且不增删时再退回数组省一点内存。"
   },
   cs4_2: {
