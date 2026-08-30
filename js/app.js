@@ -190,9 +190,14 @@
     const dq = S.quest();
     const qcard = el("div", "card quest-card");
     qcard.append(el("h3", "", "🎯 今日任务" + (dq.q1 && dq.q2 && dq.q3 ? " · 全部完成 🎉" : "")));
-    [["q1", "完成 1 节课程", 5], ["q2", "单次练习连对 5 题", 10], ["q3", "一节课全对通关", 10]].forEach(([k, txt, bonus]) => {
+    [["q1", "完成 1 节课程", 5, "#/learn/cs"], ["q2", "单次练习连对 5 题", 10, "#/review"], ["q3", "一节课全对通关", 10, "#/learn/cs"]].forEach(([k, txt, bonus, dest]) => {
       const row = el("div", "quest-row" + (dq[k] ? " done" : ""));
       row.append(el("span", "quest-mark", dq[k] ? "✅" : "⬜"), el("span", "quest-txt", txt), el("span", "quest-xp", "+" + bonus + " XP"));
+      if (!dq[k]) {
+        row.style.cursor = "pointer";
+        row.title = "点击去完成";
+        row.onclick = () => go(dest);
+      }
       qcard.append(row);
     });
     page.append(qcard);
@@ -229,7 +234,9 @@
     goalInfo.append(el("p", "muted", `完成任意 ${goal} 节课程即视为达标，完成课程会自动打卡。`));
     const next = S.nextLesson();
     if (next && S.isUnlocked(next)) {
-      const btn = el("button", "btn primary", "开始学习：" + next.title);
+      const all2 = S.allLessons().filter(l => l.track.id === next.track.id);
+      const pos = all2.findIndex(l => l.id === next.id) + 1;
+      const btn = el("button", "btn primary", `继续：${next.title}（第 ${pos}/${all2.length} 课）`);
       btn.onclick = () => location.hash = "#/lesson/" + next.id;
       goalInfo.append(btn);
     }
@@ -560,6 +567,17 @@
     card.append(el("p", "muted", `答对 ${lessonRes.correct}/${totalSteps} 题` + (lessonRes.first ? " · 首次通关奖励已含" : "")));
     if (LP.practice) card.append(el("p", "muted small", "🧪 综合练习 · 每答对 1 题 +5 XP，不扣红心"));
     if (LP.review) card.append(el("p", "muted small", "❤️ 错题练习完成，红心已回满"));
+    // 直达下一课（同赛道下一节未完成课）
+    if (!LP.practice && !LP.review && lessonRes.id) {
+      const tList = S.allLessons().filter(l => l.track.id === lessonRes.trackId);
+      const idx = tList.findIndex(l => l.id === lessonRes.id);
+      const next = tList[idx + 1];
+      if (next && S.isUnlocked(next)) {
+        const nx = el("button", "btn accent big", "下一课 → " + next.title);
+        nx.onclick = () => go("#/lesson/" + next.id);
+        card.append(nx);
+      }
+    }
     const btns = el("div", "result-btns");
     const again = el("button", "btn ghost", "再练一次");
     again.onclick = () => {

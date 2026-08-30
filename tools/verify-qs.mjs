@@ -7,21 +7,21 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 global.window = {};
-for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js/data/extra-qs.js", "js/data/extra-qs2.js", "js/data/extra-qs3.js"]) {
+for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js/data/extra-qs.js", "js/data/extra-qs2.js", "js/data/extra-qs3.js", "js/data/extra-qs4.js"]) {
   readFileSync(join(root, f), "utf8");
   // 以 require 方式执行（它们是普通脚本）
   new Function("window", readFileSync(join(root, f), "utf8"))(global.window);
 }
 
 const W = global.window;
-const extra1 = W.EXTRA_QS || {}, extra2 = W.EXTRA_QS2 || {}, extra3 = W.EXTRA_QS3 || {};
+const extra1 = W.EXTRA_QS || {}, extra2 = W.EXTRA_QS2 || {}, extra3 = W.EXTRA_QS3 || {}, extra4 = W.EXTRA_QS4 || {};
 const tracks = [W.CSHARP_COURSE, W.UNITY_COURSE, W.ALGO_COURSE];
 
 // 合并后的全部题目（与 store.js 的合并逻辑一致）
 const all = [];
 for (const c of tracks) {
   for (const l of c.lessons) {
-    const qs = l.qs.concat(extra1[l.id] || [], extra2[l.id] || [], extra3[l.id] || []);
+    const qs = l.qs.concat(extra1[l.id] || [], extra2[l.id] || [], extra3[l.id] || [], extra4[l.id] || []);
     qs.forEach((q, qi) => all.push({ track: c.id, lesson: l.id, qi, q }));
   }
 }
@@ -94,7 +94,19 @@ const sims = {
   "b3_a9_fib7": () => { const fib = { 1: 1, 2: 1 }; for (let k = 3; k <= 7; k++) fib[k] = fib[k - 1] + fib[k - 2]; return String(fib[7]); },
   "b3_a10_twosumhash": () => { const a = [2, 7, 11], t = 9; const map = {}; for (let idx = 0; idx < a.length; idx++) { const need = t - a[idx]; if (map[need] !== undefined) return map[need] + " 和 " + idx; map[a[idx]] = idx; } return "不存在"; },
   "b3_a3b_intersect": () => { const A = new Set([1, 2, 3]); const B = new Set([2, 3, 4]); let c = 0; for (const v of A) if (B.has(v)) c++; return String(c); },
-  "b3_a8b_lower": () => { const a = [1, 3, 5]; const t = 4; let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < t) lo = m + 1; else hi = m; } return String(lo); }
+  "b3_a8b_lower": () => { const a = [1, 3, 5]; const t = 4; let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < t) lo = m + 1; else hi = m; } return String(lo); },
+  // --- 第四批 ---
+  "b4_cs3_nested": () => { let stars = 0; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) stars++; return String(stars) + " 个"; },
+  "b4_cs4_missing": () => String([5, 10, 15].indexOf(99)),
+  "b4_cs5_params": () => { const sum = (...xs) => xs.reduce((a, b) => a + b, 0); return String(sum(1, 2, 3)); },
+  "b4_cs8_cast": () => String(Math.trunc(3.9)),
+  "b4_cs9_ternary": () => String(7 > 4 ? 7 : 4),
+  "b4_cs11_logger": () => "[Game]开始",
+  "b4_cs12_count": () => String([1, 2, 3, 4].filter(x => x > 2).length),
+  "b4_a7_printdesc": () => { const pr = []; const P = n => { if (n === 0) return; pr.push(n); P(n - 1); }; P(3); return pr.join("、"); },
+  "b4_a8_insert": () => { const ins = [3, 1, 2]; const key = ins[1]; let j = 0; while (j >= 0 && ins[j] > key) { ins[j + 1] = ins[j]; j--; } ins[j + 1] = key; return "{" + ins.join(", ") + "}"; },
+  "b4_a9_fib8": () => { const fb = { 1: 1, 2: 1 }; for (let k = 3; k <= 8; k++) fb[k] = fb[k - 1] + fb[k - 2]; return String(fb[8]); },
+  "b4_a10_unique": () => { const uq = [4, 4, 7]; return String(uq.find(v => uq.filter(x => x === v).length === 1)); }
 };
 
 // ---- 可执行题校验 ----
