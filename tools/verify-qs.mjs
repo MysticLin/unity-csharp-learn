@@ -7,21 +7,21 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 global.window = {};
-for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js/data/extra-qs.js", "js/data/extra-qs2.js"]) {
+for (const f of ["js/data/csharp.js", "js/data/unity.js", "js/data/algo.js", "js/data/extra-qs.js", "js/data/extra-qs2.js", "js/data/extra-qs3.js"]) {
   readFileSync(join(root, f), "utf8");
   // 以 require 方式执行（它们是普通脚本）
   new Function("window", readFileSync(join(root, f), "utf8"))(global.window);
 }
 
 const W = global.window;
-const extra1 = W.EXTRA_QS || {}, extra2 = W.EXTRA_QS2 || {};
+const extra1 = W.EXTRA_QS || {}, extra2 = W.EXTRA_QS2 || {}, extra3 = W.EXTRA_QS3 || {};
 const tracks = [W.CSHARP_COURSE, W.UNITY_COURSE, W.ALGO_COURSE];
 
 // 合并后的全部题目（与 store.js 的合并逻辑一致）
 const all = [];
 for (const c of tracks) {
   for (const l of c.lessons) {
-    const qs = l.qs.concat(extra1[l.id] || [], extra2[l.id] || []);
+    const qs = l.qs.concat(extra1[l.id] || [], extra2[l.id] || [], extra3[l.id] || []);
     qs.forEach((q, qi) => all.push({ track: c.id, lesson: l.id, qi, q }));
   }
 }
@@ -75,7 +75,26 @@ const sims = {
   "a7_memo": () => { const memo = { 1: 1, 2: 1 }; const fib = n => memo[n] || (memo[n] = fib(n - 1) + fib(n - 2)); return String(fib(6)); },
   "a8_bubble": () => { const a = [5, 1, 4, 2]; for (let j = 0; j < a.length - 1; j++) if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; } return "{" + a.join(", ") + "}"; },
   "a9_3step": () => { const f = { 1: 1, 2: 2, 3: 4 }; return String(f[1] + f[2] + f[3]); },
-  "a10_prefix": () => { const arr = [1, 2, 3, 4]; const P = []; let run = 0; for (const v of arr) { run += v; P.push(run); } const s = "P[3] - P[0] = " + P[3] + " - " + P[0] + " = " + (P[3] - P[0]); return s; }
+  "a10_prefix": () => { const arr = [1, 2, 3, 4]; const P = []; let run = 0; for (const v of arr) { run += v; P.push(run); } const s = "P[3] - P[0] = " + P[3] + " - " + P[0] + " = " + (P[3] - P[0]); return s; },
+  // --- 第三批 ---
+  "b3_cs1_convert": () => String(parseInt("42", 10) + 8),
+  "b3_cs2_sub": () => "hello world".substring(6),
+  "b3_cs3_dowhile": () => { let n = 5, lines = 0; do { lines++; n--; } while (n > 3); return lines === 2 && n === 3 ? "2 行（5 和 4）" : "其他"; },
+  "b3_cs4_reverse": () => { const r = [1, 2, 3]; r.reverse(); return String(r[1]); },
+  "b3_cs4_removeall": () => String([1, 2, 3, 4].filter(x => x % 2 !== 0).length),
+  "b3_cs6_valcopy": () => { let a = 5; { let x = a; x *= 2; } return String(a); },
+  "b3_cs9_isdead": () => (0 <= 0 ? "true" : "false"),
+  "b3_cs11_func": () => String((x => x * x)(5)),
+  "b3_cs12_any": () => ([1, 3, 5].some(x => x > 4) ? "True" : "False"),
+  "b3_a2_swapcount": () => String(Math.floor(5 / 2)) + " 次",
+  "b3_a5_depth": () => { let depth = 0, cur = 0; for (const c of "(()") { cur += c === "(" ? 1 : -1; depth = Math.max(depth, cur); } return String(depth); },
+  "b3_a6_midrev": () => { const m = [1, 2, 3].slice().reverse(); return String(m[1]); },
+  "b3_a7_arrsum": () => String([2, 3, 4].reduce((a, b) => a + b, 0)),
+  "b3_a8_selround": () => { const s8 = [4, 2, 7, 1]; let minI = 0; for (let j = 1; j < s8.length; j++) if (s8[j] < s8[minI]) minI = j; [s8[0], s8[minI]] = [s8[minI], s8[0]]; return "{" + s8.join(", ") + "}"; },
+  "b3_a9_fib7": () => { const fib = { 1: 1, 2: 1 }; for (let k = 3; k <= 7; k++) fib[k] = fib[k - 1] + fib[k - 2]; return String(fib[7]); },
+  "b3_a10_twosumhash": () => { const a = [2, 7, 11], t = 9; const map = {}; for (let idx = 0; idx < a.length; idx++) { const need = t - a[idx]; if (map[need] !== undefined) return map[need] + " 和 " + idx; map[a[idx]] = idx; } return "不存在"; },
+  "b3_a3b_intersect": () => { const A = new Set([1, 2, 3]); const B = new Set([2, 3, 4]); let c = 0; for (const v of A) if (B.has(v)) c++; return String(c); },
+  "b3_a8b_lower": () => { const a = [1, 3, 5]; const t = 4; let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < t) lo = m + 1; else hi = m; } return String(lo); }
 };
 
 // ---- 可执行题校验 ----
