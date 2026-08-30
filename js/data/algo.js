@@ -95,7 +95,7 @@ window.ALGO_COURSE = {
       ],
       qs: [
         { q: "一个正确的递归函数必须包含？", opts: ["循环", "终止条件（基线）", "try-catch", "静态变量"], a: 1, ex: "没有基线就会无限调用直到栈溢出。" },
-        { q: "以下代码 F(4) 的返回值是？", code: "int F(int n) {\n    if (n <= 1) return 1;\n    return n * F(n - 1);\n}", opts: ["4", "10", "24", "120"], a: 2, ex: "4×3×2×1 = 24，即 4!。" },
+        { tag: "a7_fact4", q: "以下代码 F(4) 的返回值是？", code: "int F(int n) {\n    if (n <= 1) return 1;\n    return n * F(n - 1);\n}", opts: ["4", "10", "24", "120"], a: 2, ex: "4×3×2×1 = 24，即 4!。" },
         { q: "递归层数太深会发生？", opts: ["编译错误", "StackOverflowException", "自动转循环", "内存泄漏"], a: 1, ex: "每次调用压栈，栈空间耗尽即溢出。" },
         { q: "朴素递归斐波那契慢的根本原因是？", opts: ["递归本身慢", "大量重复计算同一子问题", "参数太多", "用了乘法"], a: 1, ex: "fib(30) 里 fib(2) 会被算几十万次——记忆化/DP 可降到 O(n)。" },
         { q: "\"用数组把已经算过的递归结果存起来\"这项技术叫？", opts: ["懒加载", "记忆化（Memoization）", "对象池", "协程"], a: 1, ex: "空间换时间，是自顶向下 DP 的写法。" }
@@ -136,10 +136,10 @@ window.ALGO_COURSE = {
       ],
       qs: [
         { q: "\"找出字符串中最长无重复字符子串的长度\"最适合的技巧是？", opts: ["暴力枚举所有子串", "滑动窗口 + 哈希", "排序", "栈"], a: 1, ex: "右指针扩张、左指针收缩，每个字符最多进出各一次，O(n)。" },
-        { q: "以下代码输出？", code: "int[] a = {4, 2, 7, 1};\nArray.Sort(a);\nDebug.Log(a[1]);", opts: ["1", "2", "4", "7"], a: 1, ex: "排序后 {1,2,4,7}，下标 1 是 2。" },
+        { tag: "a8_sortmid", q: "以下代码输出？", code: "int[] a = {4, 2, 7, 1};\nArray.Sort(a);\nDebug.Log(a[1]);", opts: ["1", "2", "4", "7"], a: 1, ex: "排序后 {1,2,4,7}，下标 1 是 2。" },
         { q: "求两个数组交集（去重）最高效的方式是？", opts: ["双重循环比较", "两个 HashSet 互相 Contains", "都排序后二分", "转成字符串"], a: 1, ex: "一个存入 HashSet，另一个遍历查询，总体 O(n+m)。" },
         { q: "在无序数组中找\"第 K 大的元素\"，平均 O(n) 的经典算法是？", opts: ["冒泡排序 K 次", "快速选择（Quick Select）", "二分查找", "哈希计数"], a: 1, ex: "快排分区思想：只递归 K 所在的一侧，平均 O(n)。" },
-        { q: "以下代码输出？", code: "string s = \"abcabc\";\nvar set = new HashSet<char>(s);\nDebug.Log(set.Count);", opts: ["6", "3", "1", "0"], a: 1, ex: "去重后剩 {a,b,c}，Count=3。" }
+        { tag: "a10_hashsetcount", q: "以下代码输出？", code: "string s = \"abcabc\";\nvar set = new HashSet<char>(s);\nDebug.Log(set.Count);", opts: ["6", "3", "1", "0"], a: 1, ex: "去重后剩 {a,b,c}，Count=3。" }
       ]
     }
   ]

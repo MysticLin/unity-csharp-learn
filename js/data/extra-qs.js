@@ -8,16 +8,16 @@ window.EXTRA_QS = {
     { q: "$\"总分：{a + b}\"（a=3, b=4）的结果是？", opts: ["总分：7", "总分：a + b", "总分：34", "编译错误"], a: 0, ex: "插值的花括号里可以放任意表达式，先求值再嵌入字符串。" }
   ],
   cs3: [
-    { q: "以下代码打印几个 * ？", code: "for (int i = 0; i < 10; i++) {\n    if (i % 2 == 0) continue;\n    if (i == 8) break;\n    Debug.Log(\"*\");\n}", opts: ["3 个", "4 个", "5 个", "8 个"], a: 2, ex: "i==8 的 break 是死代码：8 是偶数，会先被 continue 跳过，永远轮不到 break。打印的是奇数 1,3,5,7,9，共 5 个。顺序很重要——break 写在 continue 后面就失效了。" }
+    { tag: "cs3_deadbreak",q: "以下代码打印几个 * ？", code: "for (int i = 0; i < 10; i++) {\n    if (i % 2 == 0) continue;\n    if (i == 8) break;\n    Debug.Log(\"*\");\n}", opts: ["3 个", "4 个", "5 个", "8 个"], a: 2, ex: "i==8 的 break 是死代码：8 是偶数，会先被 continue 跳过，永远轮不到 break。打印的是奇数 1,3,5,7,9，共 5 个。顺序很重要——break 写在 continue 后面就失效了。" }
   ],
   cs4: [
-    { q: "以下代码输出？（提示：Insert(下标, 值) 是插入挤位，不是替换）", code: "var list = new List<int> { 10, 20, 30 };\nlist.Insert(1, 15);\nlist.RemoveAt(0);\nDebug.Log(list[0] + \",\" + list.Count);", opts: ["10,3", "15,3", "15,2", "10,2"], a: 1, ex: "Insert 是插入不是替换：{10,20,30} → {10,15,20,30}（4 个）；RemoveAt(0) 删下标 0 的 10 → {15,20,30}，list[0]=15、Count=3。想替换某位置要用 list[1] = 15，那样才会是 15,2。" }
+    { tag: "cs4_listtrace", q: "以下代码输出？（提示：Insert(下标, 值) 是插入挤位，不是替换）", code: "var list = new List<int> { 10, 20, 30 };\nlist.Insert(1, 15);\nlist.RemoveAt(0);\nDebug.Log(list[0] + \",\" + list.Count);", opts: ["10,3", "15,3", "15,2", "10,2"], a: 1, ex: "Insert 是插入不是替换：{10,20,30} → {10,15,20,30}（4 个）；RemoveAt(0) 删下标 0 的 10 → {15,20,30}，list[0]=15、Count=3。想替换某位置要用 list[1] = 15，那样才会是 15,2。" }
   ],
   cs5: [
     { q: "以下方法（hp 已是成员变量）哪些调用方式正确？", code: "void Heal(int amount = 10) {\n    hp += amount;\n}", opts: ["Heal();", "Heal(30);", "两种都可以", "都不行"], a: 2, ex: "可选参数有默认值：不传用 10，传了用传入值。" }
   ],
   cs6: [
-    { q: "以下代码输出？", code: "class Player { public string Name; }\nvar p1 = new Player();\np1.Name = \"A\";\nvar p2 = p1;\np2.Name = \"B\";\nDebug.Log(p1.Name);", opts: ["A", "B", "null", "编译错误"], a: 1, ex: "类是引用类型，p2 = p1 复制的是引用，两者指向同一对象。" }
+    { tag: "cs6_reftypeshare",q: "以下代码输出？", code: "class Player { public string Name; }\nvar p1 = new Player();\np1.Name = \"A\";\nvar p2 = p1;\np2.Name = \"B\";\nDebug.Log(p1.Name);", opts: ["A", "B", "null", "编译错误"], a: 1, ex: "类是引用类型，p2 = p1 复制的是引用，两者指向同一对象。" }
   ],
   cs7: [
     { q: "以下代码输出什么？", code: "class A { public virtual string Hi() => \"A\"; }\nclass B : A { public override string Hi() => \"B\"; }\nA obj = new B();\nDebug.Log(obj.Hi());", opts: ["A", "B", "编译错误", "运行时报错"], a: 1, ex: "多态：父类引用指向子类对象，调用的是子类 override 的实现。" }
@@ -35,7 +35,7 @@ window.EXTRA_QS = {
     { q: "以下代码输出？", code: "Action say = () => Debug.Log(\"1\");\nsay += () => Debug.Log(\"2\");\nsay();", opts: ["1", "2", "1 然后 2", "2 然后 1"], a: 2, ex: "多播委托按订阅顺序依次调用全部方法。" }
   ],
   cs12: [
-    { q: "以下 LINQ 代码输出？", code: "int[] n = { 1, 2, 3, 4 };\nDebug.Log(n.Where(x => x % 2 == 0).Sum());", opts: ["3", "4", "6", "10"], a: 2, ex: "Where 筛出偶数 2 和 4，Sum 求和 = 6。" }
+    { tag: "cs12_linqsum",q: "以下 LINQ 代码输出？", code: "int[] n = { 1, 2, 3, 4 };\nDebug.Log(n.Where(x => x % 2 == 0).Sum());", opts: ["3", "4", "6", "10"], a: 2, ex: "Where 筛出偶数 2 和 4，Sum 求和 = 6。" }
   ],
 
   // ---------- Unity ----------
@@ -81,25 +81,25 @@ window.EXTRA_QS = {
     { q: "向长度 n 的数组尾部追加一个元素（容量足够），时间复杂度是？", opts: ["O(1)", "O(log n)", "O(n)", "O(n²)"], a: 0, ex: "尾部写入一步到位；只有触发扩容复制时才退化成 O(n)。" }
   ],
   a2: [
-    { q: "以下代码输出？", code: "string s = \"abcba\";\nint i = 0, j = s.Length - 1;\nbool ok = true;\nwhile (i < j) {\n    if (s[i] != s[j]) { ok = false; break; }\n    i++; j--;\n}\nDebug.Log(ok);", opts: ["True", "False", "报错", "死循环"], a: 0, ex: "abcba 是回文串，双指针每一对字符都相等。" }
+    { tag: "a2_palstr",q: "以下代码输出？", code: "string s = \"abcba\";\nint i = 0, j = s.Length - 1;\nbool ok = true;\nwhile (i < j) {\n    if (s[i] != s[j]) { ok = false; break; }\n    i++; j--;\n}\nDebug.Log(ok);", opts: ["True", "False", "报错", "死循环"], a: 0, ex: "abcba 是回文串，双指针每一对字符都相等。" }
   ],
   a3: [
-    { q: "以下代码输出？", code: "int[] a = { 1, 2, 3, 1 };\nvar seen = new HashSet<int>();\nint dup = -1;\nforeach (var x in a) {\n    if (!seen.Add(x)) { dup = x; break; }\n}\nDebug.Log(dup);", opts: ["1", "2", "3", "-1"], a: 0, ex: "HashSet.Add 返回 false 说明元素已存在，第一个重复的是 1。" }
+    { tag: "a3_firstdup",q: "以下代码输出？", code: "int[] a = { 1, 2, 3, 1 };\nvar seen = new HashSet<int>();\nint dup = -1;\nforeach (var x in a) {\n    if (!seen.Add(x)) { dup = x; break; }\n}\nDebug.Log(dup);", opts: ["1", "2", "3", "-1"], a: 0, ex: "HashSet.Add 返回 false 说明元素已存在，第一个重复的是 1。" }
   ],
   a4: [
     { q: "有序数组 {1,3,5,7,9} 用首尾双指针找两数之和等于 4，第一次比较 1+9=10>4，下一步应该？", opts: ["左指针右移", "右指针左移", "两个指针都内移", "直接结束"], a: 1, ex: "和偏大说明右边的数太大，j-- 换个小的。" }
   ],
   a5: [
-    { q: "以下代码输出？", code: "var st = new Stack<string>();\nst.Push(\"a\"); st.Push(\"b\");\nst.Pop();\nst.Push(\"c\");\nDebug.Log(st.Peek());", opts: ["a", "b", "c", "bc"], a: 2, ex: "弹出 b 后压入 c，栈顶是 c；Peek 只看不弹。" }
+    { tag: "a5_peek",q: "以下代码输出？", code: "var st = new Stack<string>();\nst.Push(\"a\"); st.Push(\"b\");\nst.Pop();\nst.Push(\"c\");\nDebug.Log(st.Peek());", opts: ["a", "b", "c", "bc"], a: 2, ex: "弹出 b 后压入 c，栈顶是 c；Peek 只看不弹。" }
   ],
   a6: [
     { q: "单链表 1→2→3→4 删除头节点后，新的头节点是？", opts: ["2", "1", "4", "3"], a: 0, ex: "头指针后移即可，单链表删头是 O(1)。" }
   ],
   a7: [
-    { q: "以下代码输出？", code: "int F(int n) {\n    if (n == 0) return 0;\n    return n + F(n - 1);\n}\nDebug.Log(F(4));", opts: ["4", "6", "10", "24"], a: 2, ex: "4+3+2+1+0=10，递归求 1~n 的和。" }
+    {q: "以下代码输出？", code: "int F(int n) {\n    if (n == 0) return 0;\n    return n + F(n - 1);\n}\nDebug.Log(F(4));", opts: ["4", "6", "10", "24"], a: 2, ex: "4+3+2+1+0=10，递归求 1~n 的和。" }
   ],
   a8: [
-    { q: "对 {5,2,8,1} 排序后二分查找 8，依次比较到的元素是？", opts: ["2、8", "2、5、8", "5、8", "8 一次命中"], a: 1, ex: "排序后 {1,2,5,8}：mid=2 → 5 → 8，共比较 3 次。" }
+    {q: "对 {5,2,8,1} 排序后二分查找 8，依次比较到的元素是？", opts: ["2、8", "2、5、8", "5、8", "8 一次命中"], a: 1, ex: "排序后 {1,2,5,8}：mid=2 → 5 → 8，共比较 3 次。" }
   ],
   a9: [
     { q: "爬楼梯（每次跨 1 或 2 阶），上到第 6 阶共有几种走法？", opts: ["8", "13", "21", "6"], a: 1, ex: "f(6)=f(5)+f(4)=8+5=13，斐波那契数列。" }
