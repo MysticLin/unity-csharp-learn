@@ -113,7 +113,7 @@
   // ---------- 课程进度 ----------
   S.allLessons = function () {
     const packs = window.EXTRA_PACKS || [window.EXTRA_QS, window.EXTRA_QS2, window.EXTRA_QS3, window.EXTRA_QS4, window.EXTRA_QS5, window.EXTRA_QS6, window.EXTRA_QS6B, window.EXTRA_QS7].filter(Boolean);
-    return [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE, window.PATTERNS_COURSE].flatMap(c =>
+    return [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE, window.PATTERNS_COURSE, window.SYS_COURSE].flatMap(c =>
       c.lessons.map(l => {
         const ex = [];
         for (const p of packs) if (p[l.id]) ex.push(...p[l.id]);
