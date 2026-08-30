@@ -112,10 +112,11 @@
 
   // ---------- 课程进度 ----------
   S.allLessons = function () {
-    const e1 = window.EXTRA_QS || {}, e2 = window.EXTRA_QS2 || {}, e3 = window.EXTRA_QS3 || {}, e4 = window.EXTRA_QS4 || {};
+    const packs = window.EXTRA_PACKS || [window.EXTRA_QS, window.EXTRA_QS2, window.EXTRA_QS3, window.EXTRA_QS4, window.EXTRA_QS5, window.EXTRA_QS6, window.EXTRA_QS6B, window.EXTRA_QS7].filter(Boolean);
     return [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE].flatMap(c =>
       c.lessons.map(l => {
-        const ex = [].concat(e1[l.id] || [], e2[l.id] || [], e3[l.id] || [], e4[l.id] || []);
+        const ex = [];
+        for (const p of packs) if (p[l.id]) ex.push(...p[l.id]);
         return Object.assign({ track: c }, l, ex.length ? { qs: l.qs.concat(ex) } : null);
       })
     );
