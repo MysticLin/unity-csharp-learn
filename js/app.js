@@ -167,7 +167,8 @@
     // 数据条
     const stats = el("div", "stats");
     const st = (e, v, t) => { const d = el("div", "stat"); d.append(el("div", "stat-v", e + " " + v), el("div", "stat-t", t)); return d; };
-    stats.append(st("🔥", S.streak.count, "连续天数"), st("⚡", S.xp, "总经验"), st("🏅", "Lv." + S.level(), "等级"));
+    const acc = S.totalAnswered > 0 ? Math.round(S.totalCorrect / S.totalAnswered * 100) + "%" : "—";
+    stats.append(st("🔥", S.streak.count, "连续天数"), st("⚡", S.xp, "总经验"), st("🎯", acc, `正确率 ${S.totalCorrect}/${S.totalAnswered}`));
     page.append(stats);
 
     // 连击日历（近 7 天）
@@ -355,7 +356,7 @@
   function renderLearn(trackId) {
     const page = el("div", "page");
     page.append(el("h1", "", "课程闯关"));
-    page.append(el("p", "sub muted", "按顺序闯关：完成上一课自动解锁下一课。学完知识点后答题，全部课程共 " + S.allLessons().length + " 节。"));
+    page.append(el("p", "sub muted", "按顺序闯关：完成上一课自动解锁下一课（各赛道独立）。学完知识点后答题，全部课程共 " + S.allLessons().length + " 节。桌面端可用数字键 1-4 选择、回车下一题。"));
 
     const tabs = el("div", "tabs");
     [window.CSHARP_COURSE, window.UNITY_COURSE, window.ALGO_COURSE, window.PATTERNS_COURSE, window.SYS_COURSE].forEach(c => {
@@ -444,9 +445,11 @@
     document.body.appendChild(modal);
   }
 
+  let keyAbort = null; // 键盘快捷键监听控制器
   function renderLP() {
     const page = el("div", "page");
     if (!LP) { location.hash = "#/learn/cs"; return; }
+    if (keyAbort) { keyAbort.abort(); keyAbort = null; }
 
     const headLesson = LP.list[0].lesson;          // 复习/练习模式取第一条的所属课
     const mixed = LP.review || LP.practice;
@@ -502,7 +505,7 @@
       const q = mixed ? item.q : lesson.qs[LP.qi];
       const step = LP.qi + 1;
       page.append(progressBar(step, totalSteps));
-      page.append(el("p", "lp-count muted small", LP.review ? `错题重练 ${step}/${totalSteps}` : LP.practice ? `综合练习 ${step}/${totalSteps}` : `第 ${step} 题 / 共 ${totalSteps} 题`));
+      page.append(el("p", "lp-count muted small", LP.review ? `错题重练 ${step}/${totalSteps} · ${lesson.title}` : LP.practice ? `综合练习 ${step}/${totalSteps} · ${lesson.title}` : `第 ${step} 题 / 共 ${totalSteps} 题`));
       const card = el("div", "card quiz-card");
       card.append(el("h3", "q-title", q.q));
       if (q.code) {
@@ -521,6 +524,7 @@
           picked = true;
           const right = oi === q.a;
           const noHearts = LP.review || LP.practice;
+          S.recordAnswer(right);
           if (right) {
             b.classList.add("right"); LP.correct++; LP.streak++;
             sfx("ok");
@@ -531,7 +535,8 @@
             opts.children[q.a].classList.add("right");
             LP.streak = 0;
             sfx("no"); buzz(60);
-            if (!LP.review) S.addWrong(lesson.id, LP.qi);
+            // 注意：综合练习的题目序号要用 item.qi（课程内题号），不能用练习列表位置
+            if (!LP.review) S.addWrong(mixed ? item.lesson.id : lesson.id, mixed ? item.qi : LP.qi, q.q);
             if (!noHearts && S.loseHeart() === 0) LP.dead = true;
           }
           const hNow = S.getHearts();
@@ -552,6 +557,20 @@
         opts.append(b);
       });
       card.append(opts, feedback);
+
+      // 桌面键盘快捷键：1-4 选择选项，回车下一题
+      if (keyAbort) keyAbort.abort();
+      keyAbort = new AbortController();
+      document.addEventListener("keydown", (e) => {
+        if (e.key >= "1" && e.key <= String(q.opts.length)) {
+          const k = Number(e.key) - 1;
+          if (opts.children[k] && !opts.children[k].disabled) opts.children[k].click();
+        } else if (e.key === "Enter") {
+          const nb = feedback.querySelector(".btn");
+          if (nb) nb.click();
+        }
+      }, { signal: keyAbort.signal });
+
       page.append(card);
       app.replaceChildren(page);
       return;
@@ -1149,7 +1168,7 @@
             else {
               btn.classList.add("wrong"); opts.children[b.a].classList.add("right");
               sfx("no"); buzz(60);
-              S.addWrong("x_" + lesson.id, qi);
+              S.addWrong("x_" + lesson.id, qi, b.q);
               if (S.loseHeart() === 0) toast("💔 红心用完了，去「复习」做错题可回满");
             }
             feedback.append(el("p", right ? "fb ok" : "fb no", (right ? "✅ 答对了！ " : "❌ 答错了。 ") + (b.ex || "")));

@@ -15,6 +15,7 @@
     hearts: 5, heartTs: 0,                 // 红心（每 20 分钟回复 1 颗，0 表示满）
     xpByDay: {},                           // 每日获得经验 { 'YYYY-MM-DD': n }
     streakBest: 0,                         // 最长连击
+    totalAnswered: 0, totalCorrect: 0,     // 累计答题与正确数（正确率统计）
     quests: { date: "", q1: false, q2: false, q3: false },  // 每日任务
     sound: true                            // 音效开关
   };
@@ -54,6 +55,11 @@
   S.addXp = function (n) {
     S.xp += n;
     S.xpByDay[today()] = (S.xpByDay[today()] || 0) + n;
+    save();
+  };
+  S.recordAnswer = function (correct) {
+    S.totalAnswered++;
+    if (correct) S.totalCorrect++;
     save();
   };
   S.spendXp = function (n) { if (S.xp < n) return false; S.xp -= n; save(); return true; };
@@ -151,12 +157,23 @@
 
   // ---------- 错题本 ----------
   S.wrongKey = (lessonId, qi) => lessonId + ":" + qi;
-  S.addWrong = function (lessonId, qi) { S.wrong[S.wrongKey(lessonId, qi)] = { lessonId, qi }; save(); };
+  // qtext 记录题目原文：题库更新导致题号变化时，凭原文自动清理过期错题
+  S.addWrong = function (lessonId, qi, qtext) { S.wrong[S.wrongKey(lessonId, qi)] = { lessonId, qi, qtext: qtext || "" }; save(); };
   S.removeWrong = function (lessonId, qi) { delete S.wrong[S.wrongKey(lessonId, qi)]; save(); };
   S.wrongList = function () {
-    return Object.values(S.wrong)
-      .map(w => { const l = S.findLesson(w.lessonId); return l ? { lesson: l, q: l.qs[w.qi], qi: w.qi } : null; })
-      .filter(Boolean);
+    const out = [];
+    let dirty = false;
+    for (const key of Object.keys(S.wrong)) {
+      const w = S.wrong[key];
+      const l = S.findLesson(w.lessonId);
+      const q = l && l.qs[w.qi];
+      if (!l || !q || (w.qtext && q.q !== w.qtext)) {
+        delete S.wrong[key]; dirty = true; continue;   // 课程/题目已不存在或已改写
+      }
+      out.push({ lesson: l, q, qi: w.qi });
+    }
+    if (dirty) save();
+    return out;
   };
 
   // ---------- 课表 ----------
@@ -208,7 +225,9 @@
   S.exportData = function () {
     return JSON.stringify({
       app: "unity-csharp-learn", v: 1, exportedAt: new Date().toISOString(),
-      xp: S.xp, streak: S.streak, days: S.days, lessons: S.lessons, wrong: S.wrong,
+      xp: S.xp, streak: S.streak, streakBest: S.streakBest, days: S.days,
+      totalAnswered: S.totalAnswered, totalCorrect: S.totalCorrect,
+      lessons: S.lessons, wrong: S.wrong,
       schedule: S.schedule, goal: S.goal, freeUnlock: S.freeUnlock, customTracks: S.customTracks
     });
   };
@@ -216,6 +235,9 @@
     const d = JSON.parse(json);
     S.xp = d.xp || 0;
     S.streak = d.streak || { last: null, count: 0 };
+    S.streakBest = d.streakBest || 0;
+    S.totalAnswered = d.totalAnswered || 0;
+    S.totalCorrect = d.totalCorrect || 0;
     S.days = d.days || {};
     S.lessons = d.lessons || {};
     S.wrong = d.wrong || {};
